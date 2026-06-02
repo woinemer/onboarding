@@ -1,4 +1,194 @@
-uiz()") + '">Nochmal versuchen</button>'
+(yt
+        ? '<iframe class="chapter-video" src="https://www.youtube.com/embed/'+yt[1]+'" allowfullscreen></iframe>'
+        : '<video class="chapter-video" controls><source src="'+esc(vUrl)+'"></video>') +
+      '</div>';
+  });
+  var images = c.image_url ? c.image_url.toString().split(',').map(function(v){ return v.trim(); }).filter(Boolean) : [];
+  images.forEach(function(imgUrl) {
+    html += '<div class="media-block"><img src="'+esc(imgUrl)+'" alt="" loading="lazy"></div>';
+  });
+  return html;
+}
+
+function markDone(chapterId, idx, btn) {
+  var restore = setButtonLoading(btn, 'Speichere ...');
+  api({ action: 'saveProgress', token: session.token, module_id: currentModule.module_id, chapter_id: chapterId }, function(res) {
+    restore();
+    if (res.ok) {
+      userProgress.progress.push({ chapter_id: chapterId, module_id: currentModule.module_id, status: 'completed' });
+      renderChapterList();
+      openChapter(currentChapters[idx], idx);
+      toast('Kapitel abgeschlossen ✓');
+      if (idx+1 < currentChapters.length) {
+        setTimeout(function() { openChapter(currentChapters[idx+1], idx+1); }, 600);
+      }
+    } else {
+      toast('Fehler: ' + (res.error || 'Unbekannt'));
+    }
+  });
+}
+
+// ================= MODUL-QUIZ =================
+function showModuleQuiz() {
+  if (!allChaptersDone()) { toast('Bitte schließe erst alle Kapitel ab!'); return; }
+  if (!currentQuiz || !currentQuiz.length) return;
+  closeChapterDrawer();
+  hideAllScreens();
+  document.getElementById('quiz-screen').classList.add('active');
+  window.scrollTo(0, 0);
+  document.getElementById('quiz-back-btn').onclick = function(){ showModuleView(currentModule); };
+  currentFinalQuiz = null;
+  var wrap = document.getElementById('quiz-wrap');
+  wrap.innerHTML =
+    '<div class="quiz-kicker">Modul-Abschluss</div>' +
+    '<div class="quiz-title">'+esc(currentModule.title)+'</div>' +
+    '<div class="quiz-sub">'+currentQuiz.length+' Fragen · Mindestpunktzahl '+(currentModule.quiz_min_score||70)+'%</div>' +
+    '<div id="quiz-questions"></div>' +
+    '<button class="btn-primary" style="margin-top:1.5rem;width:auto;padding:13px 28px;" onclick="submitModuleQuiz(this)"><span class="btn-label">Quiz auswerten</span></button>';
+  renderQuizQuestions(currentQuiz);
+}
+
+function submitModuleQuiz(btn) {
+  var data = collectAnswers(currentQuiz);
+  if (!data) return;
+  var restore = setButtonLoading(btn, 'Werte aus ...');
+  api({ action: 'submitQuiz', token: session.token, module_id: currentModule.module_id, answers: data.answers }, function(res) {
+    restore();
+    if (!res.ok) { toast('Fehler: ' + (res.error || 'Unbekannt')); return; }
+    applyQuizFeedback(res.results || []);
+    if (res.passed) {
+      userProgress.quizResults.push({ module_id: currentModule.module_id, passed: 'TRUE' });
+      var modIdStr = (currentModule.module_id || '').toString();
+      modulesCache.forEach(function(m) {
+        if ((m.module_id || '').toString() === modIdStr) {
+          m.passed = true;
+        }
+      });
+    }
+    showQuizResult(res, res.score || 0, false);
+  });
+}
+
+// ================= BEREICHSTEST (FINAL) =================
+function startFinalQuiz(bereich, btn) {
+  var restoreStartButton = setButtonLoading(btn, 'Lade Test ...');
+  hideAllScreens();
+  document.getElementById('quiz-screen').classList.add('active');
+  window.scrollTo(0, 0);
+  document.getElementById('quiz-back-btn').onclick = function(){ showHome(); };
+  document.getElementById('quiz-wrap').innerHTML = '<div class="loading-center"><div class="spinner"></div></div>';
+  api({ action: 'getFinalQuiz', token: session.token, bereich: bereich }, function(res) {
+    restoreStartButton();
+    if (!res.ok) {
+      document.getElementById('quiz-wrap').innerHTML = '<p style="color:var(--muted);">Fehler: ' + esc(res.error || 'Unbekannt') + '</p>';
+      return;
+    }
+    if (!res.questions || !res.questions.length) {
+      document.getElementById('quiz-wrap').innerHTML = '<p style="color:var(--muted);">Für diesen Bereich sind noch keine Fragen hinterlegt.</p>';
+      return;
+    }
+    currentFinalQuiz = { bereich: bereich, questions: res.questions, minScore: res.minScore };
+    var wrap = document.getElementById('quiz-wrap');
+    wrap.innerHTML =
+      '<div class="quiz-kicker">Bereichs-Abschlusstest</div>' +
+      '<div class="quiz-title">' + esc(bereich) + '</div>' +
+      '<div class="quiz-sub">' + res.questions.length + ' Fragen · Mindestpunktzahl ' + res.minScore + '%</div>' +
+      '<div id="quiz-questions"></div>' +
+      '<button class="btn-primary" style="margin-top:1.5rem;width:auto;padding:13px 28px;" onclick="submitFinalQuizUI(this)"><span class="btn-label">Test auswerten</span></button>';
+    renderQuizQuestions(res.questions);
+  });
+}
+
+function submitFinalQuizUI(btn) {
+  if (!currentFinalQuiz) return;
+  var data = collectAnswers(currentFinalQuiz.questions);
+  if (!data) return;
+  var restore = setButtonLoading(btn, 'Werte aus ...');
+  api({ action: 'submitFinalQuiz', token: session.token, bereich: currentFinalQuiz.bereich, answers: data.answers }, function(res) {
+    restore();
+    if (!res.ok) { toast('Fehler: ' + (res.error || 'Unbekannt')); return; }
+    applyQuizFeedback(res.results || []);
+    if (res.passed) {
+      userProgress.quizResults.push({ module_id: 'final_' + currentFinalQuiz.bereich, passed: 'TRUE' });
+      bereichStatusCache.forEach(function(bs) {
+        if (bs.bereich === currentFinalQuiz.bereich) {
+          bs.final_passed = true;
+          bs.certificate_ready = true;
+        }
+      });
+    }
+    showQuizResult(res, res.score || 0, true);
+  });
+}
+
+// ================= QUIZ-UTILS =================
+function renderQuizQuestions(questions) {
+  var qWrap = document.getElementById('quiz-questions');
+  qWrap.innerHTML = '';
+  questions.forEach(function(q, qi) {
+    var div = document.createElement('div');
+    div.className = 'quiz-question';
+    var pEl = document.createElement('p');
+    pEl.setAttribute('data-qnum', 'Frage ' + String(qi+1).padStart(2, '0') + ' / ' + String(questions.length).padStart(2, '0'));
+    pEl.textContent = q.question;
+    div.appendChild(pEl);
+    (q.options||[]).forEach(function(opt, oi) {
+      var label = document.createElement('div');
+      label.className = 'quiz-option';
+      label.id = 'opt_'+qi+'_'+oi;
+      label.innerHTML = '<span>'+String.fromCharCode(65+oi)+'</span><span>'+esc(opt)+'</span>';
+      label.onclick = function() {
+        div.querySelectorAll('.quiz-option').forEach(function(o){ o.classList.remove('selected'); });
+        label.classList.add('selected');
+      };
+      div.appendChild(label);
+    });
+    qWrap.appendChild(div);
+  });
+}
+
+function collectAnswers(questions) {
+  var answers = {}, answered = true;
+  questions.forEach(function(q, qi) {
+    var sel = document.querySelector('#quiz-questions .quiz-question:nth-child('+(qi+1)+') .selected');
+    if (!sel) { answered = false; return; }
+    var optIdx = parseInt(sel.id.split('_')[2]);
+    answers[qi] = optIdx;
+  });
+  if (!answered) { toast('Bitte alle Fragen beantworten!'); return null; }
+  return { answers: answers };
+}
+
+function applyQuizFeedback(results) {
+  results.forEach(function(r) {
+    var qi = parseInt(r.index, 10);
+    var correct = parseInt(r.correct_index, 10);
+    var selected = r.selected_index === null || r.selected_index === undefined ? null : parseInt(r.selected_index, 10);
+    var qEl = document.querySelector('#quiz-questions .quiz-question:nth-child('+(qi+1)+')');
+    if (qEl) {
+      qEl.querySelectorAll('.quiz-option').forEach(function(o) { o.onclick = null; });
+    }
+    if (!isNaN(correct)) {
+      var correctEl = document.getElementById('opt_'+qi+'_'+correct);
+      if (correctEl) correctEl.classList.add('correct');
+    }
+    if (selected !== null && !isNaN(selected) && selected !== correct) {
+      var wrongEl = document.getElementById('opt_'+qi+'_'+selected);
+      if (wrongEl) wrongEl.classList.add('wrong');
+    }
+  });
+}
+
+var lastNews = [];
+
+function showQuizResult(res, pct, isFinal) {
+  document.querySelector('#quiz-wrap .btn-primary').style.display = 'none';
+  var result = document.createElement('div');
+  result.className = 'quiz-result';
+  var againBtn = !res.passed
+    ? '<button class="btn-sec" style="margin-top:1rem;" onclick="' + (isFinal
+        ? "startFinalQuiz('"+escAttr(currentFinalQuiz.bereich)+"', this)"
+        : "showModuleQuiz()") + '">Nochmal versuchen</button>'
     : '';
 
   var backTarget, backLabel;
@@ -20,7 +210,7 @@ uiz()") + '">Nochmal versuchen</button>'
     '<div style="margin-top:1rem;">' + againBtn + backBtn + '</div>';
   document.getElementById('quiz-wrap').appendChild(result);
 
-  if (isFinal && res.passed) {
+  if (isFinal && res.passed && (!certificateSettings || certificateSettings.enabled !== false)) {
     setTimeout(function() { showCongrats(currentFinalQuiz.bereich); }, 800);
   }
 }
@@ -41,196 +231,4 @@ function showCongrats(bereich) {
   document.getElementById('gz-download').onclick = function() {
     var btn = this;
     var restore = setButtonLoading(btn, '⏳ Generiere ...');
-    api({ action: 'generateCertificate', token: session.token, bereich: bereich }, function(res) {
-      restore();
-      if (res.ok) {
-        window.open(res.url, '_blank');
-      } else {
-        toast('Fehler: ' + (res.error || 'Unbekannt'));
-      }
-    });
-  };
-  document.getElementById('confetti-overlay').classList.add('show');
-  startConfetti();
-  refreshCertificateButtons();
-}
-
-function closeConfetti() {
-  document.getElementById('confetti-overlay').classList.remove('show');
-  stopConfetti();
-}
-
-var confettiInterval = null;
-var confettiParticles = [];
-
-function startConfetti() {
-  var canvas = document.getElementById('confetti-canvas');
-  var ctx = canvas.getContext('2d');
-  function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
-  resize();
-  window.addEventListener('resize', resize);
-
-  confettiParticles = [];
-  var colors = ['#C9A96A','#B87333','#8BAD5E','#ece6d8','#a8864b'];
-  for (var i = 0; i < 180; i++) {
-    confettiParticles.push({
-      x: Math.random() * canvas.width,
-      y: Math.random() * -canvas.height,
-      size: Math.random() * 8 + 4,
-      color: colors[Math.floor(Math.random() * colors.length)],
-      vy: Math.random() * 3 + 2,
-      vx: (Math.random() - 0.5) * 2,
-      angle: Math.random() * Math.PI * 2,
-      spin: (Math.random() - 0.5) * 0.2
-    });
-  }
-
-  if (confettiInterval) cancelAnimationFrame(confettiInterval);
-  function loop() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    confettiParticles.forEach(function(p) {
-      p.y += p.vy;
-      p.x += p.vx;
-      p.angle += p.spin;
-      if (p.y > canvas.height + 20) {
-        p.y = -20;
-        p.x = Math.random() * canvas.width;
-      }
-      ctx.save();
-      ctx.translate(p.x, p.y);
-      ctx.rotate(p.angle);
-      ctx.fillStyle = p.color;
-      ctx.fillRect(-p.size/2, -p.size/4, p.size, p.size/2);
-      ctx.restore();
-    });
-    confettiInterval = requestAnimationFrame(loop);
-  }
-  loop();
-}
-
-function stopConfetti() {
-  if (confettiInterval) {
-    cancelAnimationFrame(confettiInterval);
-    confettiInterval = null;
-  }
-  var canvas = document.getElementById('confetti-canvas');
-  var ctx = canvas.getContext('2d');
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-}
-
-// ================= API + UTILS =================
-function api(body, cb) {
-  if (!API) {
-    cb({ ok: false, error: 'GAS-API ist noch nicht konfiguriert' });
-    return;
-  }
-
-  if (API.indexOf('script.google.com') > -1) {
-    jsonpApi(body, cb);
-    return;
-  }
-
-  fetch(API, {
-    method: 'POST',
-    headers: { 'Content-Type': 'text/plain' },
-    body: JSON.stringify(body)
-  })
-    .then(function(r){ return r.json(); })
-    .then(cb)
-    .catch(function(e){ console.error(e); cb({ ok: false, error: 'Verbindungsfehler' }); toast('Verbindungsfehler'); });
-}
-
-function jsonpApi(body, cb) {
-  var callbackName = '__academy_jsonp_' + Date.now() + '_' + Math.floor(Math.random() * 1000000);
-  var sep = API.indexOf('?') === -1 ? '?' : '&';
-  var script = document.createElement('script');
-  var done = false;
-  var timer = setTimeout(function() {
-    finish({ ok: false, error: 'Zeitüberschreitung beim GAS-Aufruf' });
-  }, 30000);
-
-  function cleanup() {
-    clearTimeout(timer);
-    try { delete window[callbackName]; } catch(e) { window[callbackName] = undefined; }
-    if (script.parentNode) script.parentNode.removeChild(script);
-  }
-
-  function finish(res) {
-    if (done) return;
-    done = true;
-    cleanup();
-    cb(res);
-  }
-
-  window[callbackName] = finish;
-  script.onerror = function() {
-    finish({ ok: false, error: 'Verbindungsfehler' });
-  };
-  script.src = API + sep + 'api=1&callback=' + encodeURIComponent(callbackName) +
-    '&body=' + encodeURIComponent(JSON.stringify(body));
-  document.head.appendChild(script);
-}
-function esc(str) {
-  if (str === undefined || str === null) return '';
-  return decodeTextEntities(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-}
-function escAttr(str) {
-  if (str === undefined || str === null) return '';
-  return decodeTextEntities(str).replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/"/g,'&quot;');
-}
-function decodeTextEntities(str) {
-  return str.toString()
-    .replace(/&amp;/g, '&')
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>')
-    .replace(/&quot;/g, '"')
-    .replace(/&#39;/g, "'")
-    .replace(/&apos;/g, "'");
-}
-function toast(msg) {
-  var t = document.getElementById('toast');
-  t.textContent = msg;
-  t.classList.add('show');
-  setTimeout(function(){ t.classList.remove('show'); }, 3000);
-}
-
-// ============ DEMO / PREVIEW FALLBACK ============
-// When this file runs outside Apps Script, the template tag is not substituted, so API
-// stays literal and nothing loads. Auto-inject mock data so the design is
-// viewable in a plain browser. This has NO effect when served by Apps Script
-// because the template tag gets replaced with a real URL.
-(function() {
-  var demoRequested = window.location.search.indexOf('demo=1') > -1;
-  var localPreview = window.location.protocol === 'file:' ||
-    window.location.hostname === 'localhost' ||
-    window.location.hostname === '127.0.0.1';
-  if (!demoRequested && (!localPreview || API)) return;
-  // Mock mode
-  var mockUser = { name: 'Anna Schuster', role: 'employee' };
-  var mockModules = [
-    { module_id:'m1', title:'Hygiene & HACCP', description:'Die Grundlagen der Küchenhygiene, Kontrollpunkte und Reinigungsroutinen nach HACCP.', bereich:'Küche', order_index:1, pflicht:true, quiz_min_score:70, locked:false, total_chapters:6, done_chapters:6, passed:true },
-    { module_id:'m2', title:'Messerkunde & Schnitttechnik', description:'Vom Julienne bis Brunoise – sauber, sicher und effizient arbeiten am Board.', bereich:'Küche', order_index:2, pflicht:true, quiz_min_score:70, locked:false, total_chapters:5, done_chapters:3, passed:false },
-    { module_id:'m3', title:'Saisonale Küche', description:'Regionale Produkte erkennen, einsetzen und respektvoll verarbeiten.', bereich:'Küche', order_index:3, pflicht:false, quiz_min_score:70, locked:true, required_title:'Messerkunde & Schnitttechnik', total_chapters:4, done_chapters:0, passed:false },
-    { module_id:'m4', title:'Gästekommunikation', description:'Der Erstkontakt, die Beschwerde, der Abschied – souverän durch jeden Moment.', bereich:'Service', order_index:1, pflicht:true, quiz_min_score:70, locked:false, total_chapters:5, done_chapters:2, passed:false },
-    { module_id:'m5', title:'Wein & Speisenbegleitung', description:'Welches Glas, welcher Gang, welches Temperament – die Kunst der Paarung.', bereich:'Service', order_index:2, pflicht:false, quiz_min_score:70, locked:false, total_chapters:7, done_chapters:0, passed:false },
-    { module_id:'m6', title:'Maische & Gärung', description:'Vom Korn zur Würze – ein Blick in die Handwerkskammer der Brauerei.', bereich:'Brauerei', order_index:1, pflicht:true, quiz_min_score:70, locked:false, total_chapters:8, done_chapters:8, passed:true }
-  ];
-  var mockBereichStatus = [
-    { bereich:'Küche', total_modules:3, passed_modules:1, final_unlocked:false, final_passed:false },
-    { bereich:'Service', total_modules:2, passed_modules:0, final_unlocked:false, final_passed:false },
-    { bereich:'Brauerei', total_modules:1, passed_modules:1, final_unlocked:true, final_passed:false }
-  ];
-  var mockNews = [
-    { bereich:'Allgemein', title:'Neue Saisonkarte ab Mai', content:'Ab dem 1. Mai startet unsere Frühlingskarte mit Bärlauch, Spargel und ersten Kräutern aus dem eigenen Garten. Bitte schaut euch die neuen Gerichte in der Rezeptkartei an.', updated_at: new Date().toISOString() },
-    { bereich:'Küche', title:'Neuer Kühlschrank im Pass', content:'Im Pass steht ab Montag der neue Kühlschrank. Bitte beachtet die geänderte Temperaturzone für Fisch (1–2 °C).', updated_at: new Date(Date.now()-86400000*2).toISOString() },
-    { bereich:'Brauerei', title:'Sudwerk-Wartung KW 18', content:'Kurze Unterbrechung am Dienstag: Jens wartet das Sudwerk zwischen 9 und 11 Uhr.', updated_at: new Date(Date.now()-86400000*4).toISOString() }
-  ];
-  var mockModuleQuiz = [
-    { question:'Demo-Frage: Welche Temperatur ist korrekt?', options:['2 °C','7 °C','12 °C','20 °C'], correct_index:0 }
-  ];
-  var mockFinalQuiz = [
-    { question:'Demo Abschlussfrage?', options:['A','B','C','D'], correct_index:1 }
-  ];
-  function mockGrade(questions, answers) {
-    var score = 0;
-    var results = questions.map(functi
+    api({ action

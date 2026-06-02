@@ -1,4 +1,14 @@
-ue em { font-style: italic; color: var(--gold); font-weight: 400; }
+size: 0.62rem;
+    color: var(--muted); letter-spacing: 0.16em;
+    text-transform: uppercase; margin-bottom: 0.5rem;
+  }
+  .stat-value {
+    font-family: var(--serif); font-size: 1.6rem;
+    color: var(--text); line-height: 1;
+    display: flex; align-items: baseline; gap: 0.3rem;
+  }
+  .stat-value .unit { font-size: 0.85rem; color: var(--muted); font-family: var(--sans); }
+  .stat-value em { font-style: italic; color: var(--gold); font-weight: 400; }
   .stat-bar { margin-top: 0.6rem; height: 2px; background: var(--line); border-radius: 2px; overflow: hidden; }
   .stat-bar-fill { height: 100%; background: var(--gold); transition: width 0.5s; }
 
@@ -249,9 +259,4 @@ ue em { font-style: italic; color: var(--gold); font-weight: 400; }
     letter-spacing: 0.06em; text-transform: uppercase;
     cursor: pointer; transition: all 0.2s;
   }
-  .bereichstest-card .bt-action:hover { background: #d8b87a; box-shadow: 0 8px 20px -8px rgba(201,169,106,0.5); }
-  .bereichstest-card .bt-action:disabled { opacity: 0.4; cursor: not-allowed; background: var(--line); color: var(--muted); }
-  .bereichstest-card .bt-action.cert { background: var(--green); color: var(--ink); }
-  .bereichstest-card .bt-action.cert:hover { background: #9dbb6f; }
-
-  /* ========== BACK BUTTO
+  .bereichstest-card .bt-action:

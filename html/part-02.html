@@ -1,4 +1,9 @@
-N ========== */
+hover { background: #d8b87a; box-shadow: 0 8px 20px -8px rgba(201,169,106,0.5); }
+  .bereichstest-card .bt-action:disabled { opacity: 0.4; cursor: not-allowed; background: var(--line); color: var(--muted); }
+  .bereichstest-card .bt-action.cert { background: var(--green); color: var(--ink); }
+  .bereichstest-card .bt-action.cert:hover { background: #9dbb6f; }
+
+  /* ========== BACK BUTTON ========== */
   .back-btn {
     background: none; border: none; color: var(--gold);
     cursor: pointer; font-family: var(--mono); font-size: 0.72rem;
@@ -16,6 +21,28 @@ N ========== */
     border-bottom: 1px solid var(--line);
     margin-bottom: 2rem;
   }
+  .module-layout {
+    display: grid;
+    grid-template-columns: minmax(230px, 300px) minmax(0, 1fr);
+    gap: 1.25rem;
+    align-items: start;
+  }
+  .chapter-sidebar {
+    position: sticky;
+    top: 86px;
+    max-height: calc(100vh - 110px);
+    overflow-y: auto;
+    padding-right: 0.25rem;
+  }
+  .chapter-sidebar-title {
+    font-family: var(--mono); font-size: 0.66rem;
+    color: var(--gold); letter-spacing: 0.18em;
+    text-transform: uppercase; margin-bottom: 0.75rem;
+  }
+  .drawer-close { display: none; }
+  .chapter-main { min-width: 0; }
+  .btn-sec.chapter-drawer-toggle { display: none; margin-bottom: 1rem; width: auto; }
+  .chapter-drawer-backdrop { display: none; }
   .module-view-bereich-tag {
     font-family: var(--mono); font-size: 0.66rem;
     color: var(--gold); letter-spacing: 0.2em;
@@ -38,7 +65,7 @@ N ========== */
   /* ========== CHAPTER LIST ========== */
   .chapter-list {
     display: flex; flex-direction: column; gap: 0.5rem;
-    margin-bottom: 2rem;
+    margin-bottom: 0;
   }
   .chapter-item {
     background: var(--paper);
@@ -217,35 +244,4 @@ N ========== */
   .quiz-score em { font-style: italic; }
   .quiz-passed {
     color: var(--green); font-size: 0.95rem; margin-top: 0.75rem;
-    font-family: var(--mono); letter-spacing: 0.1em; text-transform: uppercase;
-  }
-  .quiz-failed {
-    color: var(--red); font-size: 0.9rem; margin-top: 0.75rem;
-    font-family: var(--mono); letter-spacing: 0.1em; text-transform: uppercase;
-  }
-
-  /* ========== TOAST ========== */
-  .toast {
-    position: fixed; bottom: 1.75rem; right: 1.75rem;
-    background: var(--paper);
-    border: 1px solid var(--gold);
-    color: var(--text);
-    padding: 0.85rem 1.3rem;
-    border-radius: 6px;
-    font-size: 0.85rem;
-    transform: translateY(80px); opacity: 0;
-    transition: all 0.3s;
-    z-index: 999;
-    box-shadow: 0 20px 40px -10px rgba(0,0,0,0.5);
-    max-width: 360px;
-  }
-  .toast.show { transform: translateY(0); opacity: 1; }
-
-  /* ========== SPINNER ========== */
-  .spinner {
-    display: inline-block; width: 22px; height: 22px;
-    border: 2px solid var(--line); border-top-color: var(--gold);
-    border-radius: 50%; animation: spin 0.7s linear infinite;
-  }
-  @keyframes spin { to { transform: rotate(360deg); } }
-  .loading-center { display: flex; justify-content: center; padding: 3rem; grid-
+    font-family: var(--mono); letter-spacing

@@ -3,16 +3,16 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Woinemer Academy</title>
+  <title>Woinemer Onboarding</title>
 </head>
 <body>
   <noscript>Bitte JavaScript aktivieren.</noscript>
-  <p id="boot-status" style="font-family:system-ui,-apple-system,Segoe UI,sans-serif;padding:24px;color:#334155">Woinemer Academy wird geladen ...</p>
+  <p id="boot-status" style="font-family:system-ui,-apple-system,Segoe UI,sans-serif;padding:24px;color:#334155">Woinemer Onboarding wird geladen ...</p>
   <script>
   (async () => {
     try {
-      const count = 9;
-      const version = 'nav-logo-20260602';
+      const count = 10;
+      const version = 'auth-cert-settings-20260603c';
       const parts = await Promise.all(Array.from({ length: count }, (_, i) =>
         fetch('/onboarding/html/part-' + String(i).padStart(2, '0') + '.html?v=' + version, { cache: 'reload' }).then(r => {
           if (!r.ok) throw new Error('Frontend-Teil ' + i + ' konnte nicht geladen werden: ' + r.status);

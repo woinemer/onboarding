@@ -1,0 +1,29 @@
+ {chapter_id:'c5', module_id:'m4', status:'completed'}
+      ], quizResults:[
+        {module_id:'m1', passed:'TRUE'},
+        {module_id:'m6', passed:'TRUE'}
+      ] });
+      else if (a === 'getCertificateInfo') cb({ ok:true, certificates: [{bereich:'Brauerei', available:false, passed:false, isAdmin:false}], name: mockUser.name });
+      else if (a === 'getChapters') cb({ ok:true, chapters:[
+        { chapter_id:'c1', title:'Einführung', content_html:'<h2>Willkommen im Kapitel</h2><p>Dies ist ein Demo-Kapitel. In der Live-Umgebung werden hier Inhalte, Bilder und Videos aus dem Onboarding geladen.</p><p><strong>Wichtig:</strong> Das Design ist voll funktionsfähig — lediglich die Daten sind hier Platzhalter.</p>', order_index:1 },
+        { chapter_id:'c2', title:'Grundtechniken', content_html:'<h2>Grundtechniken</h2><p>Dies ist Kapitel zwei.</p>', order_index:2 }
+      ], quiz: mockModuleQuiz.map(function(q){ return { question:q.question, options:q.options }; }) });
+      else if (a === 'saveProgress') cb({ ok:true });
+      else if (a === 'submitQuiz') {
+        var mq = mockGrade(mockModuleQuiz, body.answers);
+        cb({ ok:true, passed: mq.pct >= 70, minScore:70, score:mq.pct, results:mq.results });
+      }
+      else if (a === 'getFinalQuiz') cb({ ok:true, questions: mockFinalQuiz.map(function(q){ return { question:q.question, options:q.options }; }), minScore:80, bereich: body.bereich });
+      else if (a === 'submitFinalQuiz') {
+        var fq = mockGrade(mockFinalQuiz, body.answers);
+        cb({ ok:true, passed: fq.pct >= 80, minScore:80, score:fq.pct, results:fq.results });
+      }
+      else if (a === 'generateCertificate') cb({ ok:true, url:'#demo-certificate' });
+      else cb({ ok:false, error:'Demo-Modus' });
+    }, 150);
+  };
+})();
+initAuthScreen();
+</script>
+</body>
+</html>

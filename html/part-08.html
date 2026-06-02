@@ -1,4 +1,201 @@
-on(q, i) {
+: 'generateCertificate', token: session.token, bereich: bereich }, function(res) {
+      restore();
+      if (res.ok) {
+        window.open(res.url, '_blank');
+      } else {
+        toast('Fehler: ' + (res.error || 'Unbekannt'));
+      }
+    });
+  };
+  document.getElementById('confetti-overlay').classList.add('show');
+  startConfetti();
+  refreshCertificateButtons();
+}
+
+function closeConfetti() {
+  document.getElementById('confetti-overlay').classList.remove('show');
+  stopConfetti();
+}
+
+var confettiInterval = null;
+var confettiParticles = [];
+
+function startConfetti() {
+  var canvas = document.getElementById('confetti-canvas');
+  var ctx = canvas.getContext('2d');
+  function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+  resize();
+  window.addEventListener('resize', resize);
+
+  confettiParticles = [];
+  var colors = ['#C9A96A','#B87333','#8BAD5E','#ece6d8','#a8864b'];
+  for (var i = 0; i < 180; i++) {
+    confettiParticles.push({
+      x: Math.random() * canvas.width,
+      y: Math.random() * -canvas.height,
+      size: Math.random() * 8 + 4,
+      color: colors[Math.floor(Math.random() * colors.length)],
+      vy: Math.random() * 3 + 2,
+      vx: (Math.random() - 0.5) * 2,
+      angle: Math.random() * Math.PI * 2,
+      spin: (Math.random() - 0.5) * 0.2
+    });
+  }
+
+  if (confettiInterval) cancelAnimationFrame(confettiInterval);
+  function loop() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    confettiParticles.forEach(function(p) {
+      p.y += p.vy;
+      p.x += p.vx;
+      p.angle += p.spin;
+      if (p.y > canvas.height + 20) {
+        p.y = -20;
+        p.x = Math.random() * canvas.width;
+      }
+      ctx.save();
+      ctx.translate(p.x, p.y);
+      ctx.rotate(p.angle);
+      ctx.fillStyle = p.color;
+      ctx.fillRect(-p.size/2, -p.size/4, p.size, p.size/2);
+      ctx.restore();
+    });
+    confettiInterval = requestAnimationFrame(loop);
+  }
+  loop();
+}
+
+function stopConfetti() {
+  if (confettiInterval) {
+    cancelAnimationFrame(confettiInterval);
+    confettiInterval = null;
+  }
+  var canvas = document.getElementById('confetti-canvas');
+  var ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+}
+
+// ================= API + UTILS =================
+function api(body, cb) {
+  if (!API) {
+    cb({ ok: false, error: 'GAS-API ist noch nicht konfiguriert' });
+    return;
+  }
+
+  if (API.indexOf('script.google.com') > -1) {
+    jsonpApi(body, cb);
+    return;
+  }
+
+  fetch(API, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain' },
+    body: JSON.stringify(body)
+  })
+    .then(function(r){ return r.json(); })
+    .then(cb)
+    .catch(function(e){ console.error(e); cb({ ok: false, error: 'Verbindungsfehler' }); toast('Verbindungsfehler'); });
+}
+
+function jsonpApi(body, cb) {
+  var callbackName = '__onboarding_jsonp_' + Date.now() + '_' + Math.floor(Math.random() * 1000000);
+  var sep = API.indexOf('?') === -1 ? '?' : '&';
+  var script = document.createElement('script');
+  var done = false;
+  var timer = setTimeout(function() {
+    finish({ ok: false, error: 'Zeitüberschreitung beim GAS-Aufruf' });
+  }, 30000);
+
+  function cleanup() {
+    clearTimeout(timer);
+    try { delete window[callbackName]; } catch(e) { window[callbackName] = undefined; }
+    if (script.parentNode) script.parentNode.removeChild(script);
+  }
+
+  function finish(res) {
+    if (done) return;
+    done = true;
+    cleanup();
+    cb(res);
+  }
+
+  window[callbackName] = finish;
+  script.onerror = function() {
+    finish({ ok: false, error: 'Verbindungsfehler' });
+  };
+  script.src = API + sep + 'api=1&callback=' + encodeURIComponent(callbackName) +
+    '&body=' + encodeURIComponent(JSON.stringify(body));
+  document.head.appendChild(script);
+}
+function esc(str) {
+  if (str === undefined || str === null) return '';
+  return decodeTextEntities(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function escAttr(str) {
+  if (str === undefined || str === null) return '';
+  return decodeTextEntities(str).replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/"/g,'&quot;');
+}
+function decodeTextEntities(str) {
+  return str.toString()
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&apos;/g, "'");
+}
+function toast(msg) {
+  var t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(function(){ t.classList.remove('show'); }, 3000);
+}
+
+// ============ DEMO / PREVIEW FALLBACK ============
+// When this file runs outside Apps Script, the template tag is not substituted, so API
+// stays literal and nothing loads. Auto-inject mock data so the design is
+// viewable in a plain browser. This has NO effect when served by Apps Script
+// because the template tag gets replaced with a real URL.
+(function() {
+  var demoRequested = window.location.search.indexOf('demo=1') > -1;
+  var localPreview = window.location.protocol === 'file:' ||
+    window.location.hostname === 'localhost' ||
+    window.location.hostname === '127.0.0.1';
+  if (!demoRequested && (!localPreview || API)) return;
+  // Mock mode
+  var mockUser = { user_id: 'demo-user', name: 'Anna Schuster', role: 'employee' };
+  if (window.location.search.indexOf('autologin=1') > -1) {
+    try {
+      localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify({ ok:true, token:'demo', user: mockUser }));
+    } catch(e) {}
+  }
+  var mockModules = [
+    { module_id:'m1', title:'Hygiene & HACCP', description:'Die Grundlagen der Küchenhygiene, Kontrollpunkte und Reinigungsroutinen nach HACCP.', bereich:'Küche', order_index:1, pflicht:true, quiz_min_score:70, locked:false, total_chapters:6, done_chapters:6, passed:true },
+    { module_id:'m2', title:'Messerkunde & Schnitttechnik', description:'Vom Julienne bis Brunoise – sauber, sicher und effizient arbeiten am Board.', bereich:'Küche', order_index:2, pflicht:true, quiz_min_score:70, locked:false, total_chapters:5, done_chapters:3, passed:false },
+    { module_id:'m3', title:'Saisonale Küche', description:'Regionale Produkte erkennen, einsetzen und respektvoll verarbeiten.', bereich:'Küche', order_index:3, pflicht:false, quiz_min_score:70, locked:true, required_title:'Messerkunde & Schnitttechnik', total_chapters:4, done_chapters:0, passed:false },
+    { module_id:'m4', title:'Gästekommunikation', description:'Der Erstkontakt, die Beschwerde, der Abschied – souverän durch jeden Moment.', bereich:'Service', order_index:1, pflicht:true, quiz_min_score:70, locked:false, total_chapters:5, done_chapters:2, passed:false },
+    { module_id:'m5', title:'Wein & Speisenbegleitung', description:'Welches Glas, welcher Gang, welches Temperament – die Kunst der Paarung.', bereich:'Service', order_index:2, pflicht:false, quiz_min_score:70, locked:false, total_chapters:7, done_chapters:0, passed:false },
+    { module_id:'m6', title:'Maische & Gärung', description:'Vom Korn zur Würze – ein Blick in die Handwerkskammer der Brauerei.', bereich:'Brauerei', order_index:1, pflicht:true, quiz_min_score:70, locked:false, total_chapters:8, done_chapters:8, passed:true }
+  ];
+  var mockBereichStatus = [
+    { bereich:'Küche', total_modules:3, passed_modules:1, final_unlocked:false, final_passed:false },
+    { bereich:'Service', total_modules:2, passed_modules:0, final_unlocked:false, final_passed:false },
+    { bereich:'Brauerei', total_modules:1, passed_modules:1, final_unlocked:true, final_passed:false }
+  ];
+  var mockNews = [
+    { bereich:'Allgemein', title:'Neue Saisonkarte ab Mai', content:'Ab dem 1. Mai startet unsere Frühlingskarte mit Bärlauch, Spargel und ersten Kräutern aus dem eigenen Garten. Bitte schaut euch die neuen Gerichte in der Rezeptkartei an.', updated_at: new Date().toISOString() },
+    { bereich:'Küche', title:'Neuer Kühlschrank im Pass', content:'Im Pass steht ab Montag der neue Kühlschrank. Bitte beachtet die geänderte Temperaturzone für Fisch (1–2 °C).', updated_at: new Date(Date.now()-86400000*2).toISOString() },
+    { bereich:'Brauerei', title:'Sudwerk-Wartung KW 18', content:'Kurze Unterbrechung am Dienstag: Jens wartet das Sudwerk zwischen 9 und 11 Uhr.', updated_at: new Date(Date.now()-86400000*4).toISOString() }
+  ];
+  var mockModuleQuiz = [
+    { question:'Demo-Frage: Welche Temperatur ist korrekt?', options:['2 °C','7 °C','12 °C','20 °C'], correct_index:0 }
+  ];
+  var mockFinalQuiz = [
+    { question:'Demo Abschlussfrage?', options:['A','B','C','D'], correct_index:1 }
+  ];
+  function mockGrade(questions, answers) {
+    var score = 0;
+    var results = questions.map(function(q, i) {
       var selected = parseInt((answers || {})[i], 10);
       var correct = parseInt(q.correct_index, 10) || 0;
       var ok = selected === correct;
@@ -12,36 +209,13 @@ on(q, i) {
     setTimeout(function() {
       var a = body.action;
       if (a === 'login') cb({ ok:true, token:'demo', user: mockUser });
+      else if (a === 'validateSession') cb({ ok:true, user: mockUser });
+      else if (a === 'logout') cb({ ok:true });
+      else if (a === 'requestPasswordReset') cb({ ok:true, message:'Demo: Reset-Link wuerde per Mail versendet.' });
+      else if (a === 'registerWithInvite') cb({ ok:true, message:'Demo: Bitte bestaetige deine E-Mail-Adresse.' });
       else if (a === 'getInitialData') cb({ ok:true, isAdmin:false, modules: mockModules, bereichStatus: mockBereichStatus, news: mockNews, progress:[
         {chapter_id:'c1', module_id:'m2', status:'completed'},
         {chapter_id:'c2', module_id:'m2', status:'completed'},
         {chapter_id:'c3', module_id:'m2', status:'completed'},
         {chapter_id:'c4', module_id:'m4', status:'completed'},
-        {chapter_id:'c5', module_id:'m4', status:'completed'}
-      ], quizResults:[
-        {module_id:'m1', passed:'TRUE'},
-        {module_id:'m6', passed:'TRUE'}
-      ] });
-      else if (a === 'getCertificateInfo') cb({ ok:true, certificates: [{bereich:'Brauerei', available:false, passed:false, isAdmin:false}], name: mockUser.name });
-      else if (a === 'getChapters') cb({ ok:true, chapters:[
-        { chapter_id:'c1', title:'Einführung', content_html:'<h2>Willkommen im Kapitel</h2><p>Dies ist ein Demo-Kapitel. In der Live-Umgebung werden hier Inhalte, Bilder und Videos aus der Academy geladen.</p><p><strong>Wichtig:</strong> Das Design ist voll funktionsfähig — lediglich die Daten sind hier Platzhalter.</p>', order_index:1 },
-        { chapter_id:'c2', title:'Grundtechniken', content_html:'<h2>Grundtechniken</h2><p>Dies ist Kapitel zwei.</p>', order_index:2 }
-      ], quiz: mockModuleQuiz.map(function(q){ return { question:q.question, options:q.options }; }) });
-      else if (a === 'saveProgress') cb({ ok:true });
-      else if (a === 'submitQuiz') {
-        var mq = mockGrade(mockModuleQuiz, body.answers);
-        cb({ ok:true, passed: mq.pct >= 70, minScore:70, score:mq.pct, results:mq.results });
-      }
-      else if (a === 'getFinalQuiz') cb({ ok:true, questions: mockFinalQuiz.map(function(q){ return { question:q.question, options:q.options }; }), minScore:80, bereich: body.bereich });
-      else if (a === 'submitFinalQuiz') {
-        var fq = mockGrade(mockFinalQuiz, body.answers);
-        cb({ ok:true, passed: fq.pct >= 80, minScore:80, score:fq.pct, results:fq.results });
-      }
-      else if (a === 'generateCertificate') cb({ ok:true, url:'#demo-certificate' });
-      else cb({ ok:false, error:'Demo-Modus' });
-    }, 150);
-  };
-})();
-</script>
-</body>
-</html>
+       

@@ -1,3 +1,118 @@
+e" id="mv-title"></div>
+      <div class="module-view-meta" id="mv-desc"></div>
+    </div>
+    <button class="btn-sec chapter-drawer-toggle" onclick="openChapterDrawer()">Kapitel öffnen</button>
+    <div class="chapter-drawer-backdrop" onclick="closeChapterDrawer()"></div>
+    <div class="module-layout">
+      <aside class="chapter-sidebar">
+        <div class="chapter-sidebar-title">Kapitel <button class="drawer-close" onclick="closeChapterDrawer()">×</button></div>
+        <div class="chapter-list" id="chapter-list"></div>
+      </aside>
+      <div class="chapter-main" id="chapter-content-wrap"></div>
+    </div>
+  </div>
+</div>
+
+<div id="quiz-screen" class="screen">
+  <div class="page-wrap">
+    <button class="back-btn" id="quiz-back-btn">Zurück</button>
+    <div class="quiz-wrap" id="quiz-wrap"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- KONFETTI + GLUECKWUNSCH -->
+<div id="confetti-overlay">
+  <canvas id="confetti-canvas"></canvas>
+  <div class="gz-card">
+    <div class="gz-crest"></div>
+    <div class="gz-kicker">Ausgezeichnet</div>
+    <div class="gz-title">Herzlichen <em>Glückwunsch</em></div>
+    <div class="gz-text">
+      Du hast erfolgreich alle Module und den Abschlusstest für den Bereich
+      <span class="gz-bereich" id="gz-bereich"></span> bestanden. Dein Zertifikat steht zum Download bereit.
+    </div>
+    <div class="gz-actions">
+      <button class="gz-btn primary" id="gz-download">📜 Zertifikat herunterladen</button>
+      <button class="gz-btn secondary" onclick="closeConfetti()">Später</button>
+    </div>
+  </div>
+</div>
+
+<script src="./config.js"></script>
+<script>
+var API = (function() {
+  var templateApi = '<?= ScriptApp.getService().getUrl() ?>';
+  if (templateApi && templateApi.indexOf('<?') === -1 && templateApi.indexOf('ScriptApp') === -1) {
+    return templateApi;
+  }
+
+  var params = new URLSearchParams(window.location.search);
+  var queryApi = params.get('api');
+  if (queryApi) {
+    try { localStorage.setItem('woinemer_onboarding_api', queryApi); } catch(e) {}
+    return queryApi;
+  }
+
+  if (window.WOINEMER_ONBOARDING_API) return window.WOINEMER_ONBOARDING_API;
+  try {
+    var storedApi = localStorage.getItem('woinemer_onboarding_api');
+    if (storedApi) return storedApi;
+  } catch(e) {}
+
+  return '';
+})();
+var session = null;
+var currentModule = null;
+var currentChapters = [];
+var currentQuiz = [];
+var currentFinalQuiz = null;
+var userProgress = { progress: [], quizResults: [] };
+var modulesCache = [];
+var bereichStatusCache = [];
+var isAdminUser = false;
+var certificateCache = [];
+var certificateSettings = { enabled: true, auto_generate: true, email_enabled: false };
+var signupContext = null;
+var SESSION_STORAGE_KEY = 'woinemer_onboarding_session_v1';
+
+function setButtonLoading(btn, label) {
+  if (!btn) return function(){};
+  var oldHtml = btn.innerHTML;
+  var oldText = btn.textContent;
+  var oldDisabled = btn.disabled;
+  btn.disabled = true;
+  btn.classList.add('loading');
+  if (label) {
+    var labelEl = btn.querySelector('.btn-label');
+    if (labelEl) labelEl.textContent = label;
+    else btn.innerHTML = label;
+  }
+  return function() {
+    btn.disabled = oldDisabled;
+    btn.classList.remove('loading');
+    if (label) {
+      var labelEl = btn.querySelector('.btn-label');
+      if (labelEl) labelEl.textContent = oldText.trim() || oldHtml;
+      else btn.innerHTML = oldHtml;
+    }
+  };
+}
+
+function initialDataCacheKey() {
+  if (!session || !session.user) return '';
+  return 'woinemer_onboarding_initial_' + (session.user.user_id || session.user.name || 'user');
+}
+
+function readInitialDataCache() {
+  var key = initialDataCacheKey();
+  if (!key) return null;
+  try {
+    var cached = JSON.parse(localStorage.getItem(key) || 'null');
+    if (!cached || !cached.data || (Date.now() - cached.ts) > 10 * 60 * 1000) return null;
+    return cached.data;
+  } catch(e) {
     return null;
   }
 }
@@ -15,6 +130,7 @@ function applyInitialData(res, options) {
   bereichStatusCache = res.bereichStatus || [];
   userProgress       = { progress: res.progress || [], quizResults: res.quizResults || [] };
   lastNews           = res.news || [];
+  certificateSettings = res.certificateSettings || certificateSettings;
 
   renderStats();
   renderNews(lastNews);
@@ -24,6 +140,55 @@ function applyInitialData(res, options) {
 }
 
 // ================= LOGIN =================
+function saveSession() {
+  try { localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(session)); } catch(e) {}
+}
+
+function clearStoredSession() {
+  try { localStorage.removeItem(SESSION_STORAGE_KEY); } catch(e) {}
+}
+
+function readStoredSession() {
+  try { return JSON.parse(localStorage.getItem(SESSION_STORAGE_KEY) || 'null'); } catch(e) { return null; }
+}
+
+function restoreSessionIfPossible() {
+  var stored = readStoredSession();
+  if (!stored || !stored.token) return false;
+  session = stored;
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('signup-screen').style.display = 'none';
+  api({ action: 'validateSession', token: stored.token }, function(res) {
+    if (res.ok) {
+      session.user = res.user || stored.user;
+      saveSession();
+      loadApp();
+    } else {
+      session = null;
+      clearStoredSession();
+      showLoginScreen();
+    }
+  });
+  return true;
+}
+
+function showLoginScreen() {
+  document.getElementById('signup-screen').style.display = 'none';
+  document.getElementById('login-screen').style.display = 'flex';
+  document.getElementById('main-nav').style.display = 'none';
+  hideAllScreens();
+}
+
+function showSignupScreen(area, invite) {
+  signupContext = { area: area, invite: invite };
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('signup-screen').style.display = 'flex';
+  document.getElementById('main-nav').style.display = 'none';
+  hideAllScreens();
+  var label = area === 'kueche' ? 'Küche' : 'Service';
+  document.getElementById('signup-note').textContent = 'Zugang fuer den Bereich ' + label + ' einrichten.';
+}
+
 function doLogin() {
   var btn = document.getElementById('btn-login');
   if (btn.classList.contains('loading')) return;
@@ -43,7 +208,7 @@ function doLogin() {
     btn.classList.remove('loading');
     btn.disabled = false;
     btn.querySelector('.btn-label').textContent = 'Anmelden';
-    if (res.ok) { session = res; loadApp(); }
+    if (res.ok) { session = res; saveSession(); loadApp(); }
     else { err.textContent = res.error || 'Anmeldung fehlgeschlagen'; err.style.display = 'block'; }
   });
 }
@@ -54,16 +219,21 @@ function doLogin() {
 });
 
 function logout() {
+  var oldToken = session && session.token;
+  if (oldToken) api({ action: 'logout', token: oldToken }, function(){});
   session = null;
   isAdminUser = false;
   certificateCache = [];
+  clearStoredSession();
   document.getElementById('main-nav').style.display = 'none';
   document.getElementById('login-screen').style.display = 'flex';
+  document.getElementById('signup-screen').style.display = 'none';
   hideAllScreens();
 }
 
 function loadApp() {
   document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('signup-screen').style.display = 'none';
   document.getElementById('main-nav').style.display = 'flex';
   document.getElementById('nav-name').textContent = session.user.name;
   document.getElementById('welcome-name').textContent = session.user.name.split(' ')[0];
@@ -71,202 +241,47 @@ function loadApp() {
   showHome();
 }
 
-// ================= HELPER =================
-function isChapterDone(chapterId) {
-  if (!chapterId) return false;
-  var target = chapterId.toString();
-  return userProgress.progress.some(function(p) {
-    return p && p.chapter_id && p.chapter_id.toString() === target;
-  });
-}
-function isPassed(val) {
-  return val === true || val === 'TRUE' || val === 'true';
-}
-function isRequired(val) {
-  if (val === undefined || val === null || val === '') return true;
-  return isPassed(val);
-}
-function isModulePassed(moduleId) {
-  if (!moduleId) return false;
-  var target = moduleId.toString();
-  return userProgress.quizResults.some(function(q) {
-    return q && q.module_id && q.module_id.toString() === target && isPassed(q.passed);
-  });
-}
-function isChapterUnlocked(idx) {
-  if (isAdminUser) return true;
-  if (idx === 0) return true;
-  return isChapterDone(currentChapters[idx - 1].chapter_id);
-}
-function allChaptersDone() {
-  if (isAdminUser) return true;
-  return currentChapters
-    .filter(function(c) { return isRequired(c.pflicht); })
-    .every(function(c) { return isChapterDone(c.chapter_id); });
-}
-
-function hideAllScreens() {
-  ['home-screen','module-screen','quiz-screen'].forEach(function(id) {
-    document.getElementById(id).classList.remove('active');
-  });
-}
-
-// ================= HOME =================
-function showHome() {
-  hideAllScreens();
-  document.getElementById('home-screen').classList.add('active');
-  loadInitialData();
-}
-
-function loadInitialData() {
-  var modGrid  = document.getElementById('module-grid');
-  var newsGrid = document.getElementById('news-grid');
-  var cached = readInitialDataCache();
-  if (cached) {
-    applyInitialData(cached, { fromCache: true });
-  } else {
-    modGrid.innerHTML  = '<div class="loading-center"><div class="spinner"></div></div>';
-    newsGrid.innerHTML = '<div class="loading-center"><div class="spinner"></div></div>';
+function submitSignup() {
+  var btn = document.getElementById('btn-signup');
+  if (btn.classList.contains('loading')) return;
+  var err = document.getElementById('signup-err');
+  err.style.display = 'none';
+  var payload = {
+    action: 'registerWithInvite',
+    signup: signupContext ? signupContext.area : '',
+    invite: signupContext ? signupContext.invite : '',
+    name: document.getElementById('signup-name').value.trim(),
+    email: document.getElementById('signup-email').value.trim(),
+    password: document.getElementById('signup-pass').value
+  };
+  if (!payload.name || !payload.email || !payload.password) {
+    err.textContent = 'Bitte alle Felder ausfüllen';
+    err.style.display = 'block';
+    return;
   }
-
-  api({ action: 'getInitialData', token: session.token }, function(res) {
-    if (!res.ok) {
-      if (!cached) modGrid.innerHTML = '<p class="empty-state">Fehler beim Laden.</p>';
-      else toast('Aktualisierung fehlgeschlagen');
-      return;
+  var restore = setButtonLoading(btn, 'Erstelle Zugang ...');
+  api(payload, function(res) {
+    restore();
+    err.textContent = res.message || res.error || '';
+    err.style.display = 'block';
+    if (res.ok) {
+      document.getElementById('signup-pass').value = '';
     }
-    writeInitialDataCache(res);
-    applyInitialData(res);
   });
 }
 
-function renderStats() {
-  var strip = document.getElementById('stats-strip');
-  if (!modulesCache.length && !bereichStatusCache.length) { strip.style.display = 'none'; return; }
-  strip.style.display = 'grid';
-
-  var totalMods = modulesCache.length;
-  var doneMods  = modulesCache.filter(function(m) { return m.passed === true; }).length;
-  var totalChaps = 0, doneChaps = 0;
-  modulesCache.forEach(function(m) {
-    totalChaps += (m.total_chapters || 0);
-    doneChaps  += (m.done_chapters  || 0);
-  });
-  var totalUnits = totalMods + totalChaps;
-  var doneUnits  = doneMods + doneChaps;
-  var pct = totalUnits ? Math.round(doneUnits / totalUnits * 100) : 0;
-  var certsEarned = bereichStatusCache.filter(function(b) { return b.final_passed; }).length;
-
-  document.getElementById('stat-pct').textContent = pct;
-  document.getElementById('stat-pct-bar').style.width = pct + '%';
-  document.getElementById('stat-mods-done').textContent = doneMods;
-  document.getElementById('stat-mods-total').textContent = ' / ' + totalMods;
-  document.getElementById('stat-chaps').textContent = doneChaps;
-  document.getElementById('stat-certs').textContent = certsEarned;
-}
-
-function renderNews(newsArr) {
-  var grid = document.getElementById('news-grid');
-  var count = document.getElementById('news-count');
-  grid.innerHTML = '';
-  if (!newsArr.length) {
-    count.textContent = '';
-    grid.innerHTML = '<div class="empty-state">Momentan keine Neuigkeiten.</div>';
+function requestPasswordResetUI(btn) {
+  var email = document.getElementById('login-user').value.trim();
+  var err = document.getElementById('login-err');
+  err.style.display = 'none';
+  if (!email) {
+    err.textContent = 'Bitte trage deine E-Mail-Adresse ein.';
+    err.style.display = 'block';
     return;
   }
-  count.textContent = '(' + newsArr.length + ')';
-  newsArr.forEach(function(n) {
-    var isAllg = n.bereich === 'Allgemein';
-    var date = n.updated_at ? new Date(n.updated_at).toLocaleDateString('de-DE', { day:'2-digit', month:'2-digit', year:'numeric' }) : '';
-    var card = document.createElement('div');
-    card.className = 'news-card ' + (isAllg ? 'allgemein' : 'bereich');
-    card.innerHTML =
-      '<div class="news-head-row">' +
-        '<div class="news-bereich-tag">' + esc(n.bereich) + '</div>' +
-        (date ? '<div class="news-date">' + date + '</div>' : '') +
-      '</div>' +
-      '<div class="news-title">' + esc(n.title) + '</div>' +
-      '<div class="news-content">' + esc(n.content) + '</div>';
-    grid.appendChild(card);
+  var restore = setButtonLoading(btn, 'Sende Link ...');
+  api({ action: 'requestPasswordReset', email: email }, function(res) {
+    restore();
+    err.textContent = res.message || res.error || 'Wenn die E-Mail bekannt ist, wurde ein Link gesendet.';
+    err.style.display = 'block';
   });
-}
-
-// Grouped by Bereich
-function renderModuleGrid() {
-  var grid = document.getElementById('module-grid');
-  var countEl = document.getElementById('mod-count');
-  grid.innerHTML = '';
-  if (!modulesCache.length) {
-    countEl.textContent = '';
-    grid.innerHTML = '<div class="empty-state">Dir sind noch keine Module zugewiesen.</div>';
-    return;
-  }
-  countEl.textContent = '(' + modulesCache.length + ')';
-
-  var sorted = modulesCache.slice().sort(function(a, b) {
-    var aDone = a.passed ? 1 : 0;
-    var bDone = b.passed ? 1 : 0;
-    if (aDone !== bDone) return aDone - bDone;
-    return (a.order_index || 0) - (b.order_index || 0);
-  });
-
-  // group by bereich
-  var groups = {};
-  var groupOrder = [];
-  sorted.forEach(function(m) {
-    var b = (m.bereich || 'Sonstige').toString();
-    if (!groups[b]) { groups[b] = []; groupOrder.push(b); }
-    groups[b].push(m);
-  });
-
-  var groupIdx = 0;
-  groupOrder.forEach(function(bereich) {
-    var mods = groups[bereich];
-    var totalInB = mods.length;
-    var doneInB = mods.filter(function(m) { return m.passed; }).length;
-    var pct = totalInB ? Math.round(doneInB / totalInB * 100) : 0;
-    groupIdx++;
-
-    var groupWrap = document.createElement('div');
-    groupWrap.className = 'bereich-group';
-
-    var head = document.createElement('div');
-    head.className = 'bereich-head';
-    head.innerHTML =
-      '<div class="bereich-title-wrap">' +
-        '<div class="bereich-num">' + String(groupIdx).padStart(2, '0') + '</div>' +
-        '<div class="bereich-title">' + esc(bereich) + '</div>' +
-      '</div>' +
-      '<div class="bereich-meta">' +
-        '<span>' + doneInB + ' von ' + totalInB + ' Module</span>' +
-        '<span class="dot"></span>' +
-        '<span class="' + (pct === 100 ? 'ok' : '') + '">' + pct + '% abgeschlossen</span>' +
-      '</div>';
-    groupWrap.appendChild(head);
-
-    var inner = document.createElement('div');
-    inner.className = 'module-grid-inner';
-
-    mods.forEach(function(m) {
-      var passed = m.passed === true;
-      var locked = m.locked === true && !isAdminUser;
-      var card = document.createElement('div');
-      card.className = 'module-card' + (passed ? ' done' : '') + (locked ? ' locked' : '');
-
-      var badge = passed
-        ? '<div class="module-badge">✓ Abgeschlossen</div>'
-        : (locked ? '<div class="module-lock-badge">🔒 Gesperrt</div>' : '<div class="module-bereich" style="text-align:right;">' + esc(m.bereich) + '</div>');
-
-      var lockInfo = locked
-        ? '<div class="module-lock-info">🔒 Zuerst abschließen: <strong>' + esc(m.required_title) + '</strong></div>'
-        : '';
-      var pflichtTag = (!locked && ((m.pflicht||'').toString()==='TRUE'||m.pflicht===true))
-        ? '<div class="pflicht-tag">Pflicht</div>'
-        : '';
-      var total = m.total_chapters || 0;
-      var done  = m.done_chapters || 0;
-      var mpct = total ? Math.round(done / total * 100) : 0;
-      var progressHtml = !locked
-        ? '<div class="module-progress-wrap">' +
-            '<div class="module-progress-row">' +
-          

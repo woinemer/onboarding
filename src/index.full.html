@@ -4,7 +4,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Woinemer Academy</title>
+<title>Woinemer Onboarding</title>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Serif:ital,wght@0,400;0,500;1,400&family=Spline+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -51,7 +51,7 @@
     opacity: 0.7;
     mix-blend-mode: overlay;
   }
-  #login-screen, nav, .screen, .toast, #confetti-overlay { position: relative; z-index: 1; }
+  #login-screen, #signup-screen, nav, .screen, .toast, #confetti-overlay { position: relative; z-index: 1; }
 
   a { color: inherit; }
   button { font-family: inherit; }
@@ -122,7 +122,7 @@
   .screen.active { display: block; }
 
   /* ========== LOGIN ========== */
-  #login-screen {
+  #login-screen, #signup-screen {
     display: flex; align-items: center; justify-content: center;
     min-height: 100vh; padding: 2rem;
   }
@@ -205,6 +205,16 @@
   }
   .btn-primary.loading .btn-spinner { display: inline-block; }
   .login-error { color: var(--red); font-size: 0.8rem; margin-top: 0.9rem; display: none; text-align: center; }
+  .login-link {
+    background: none; border: none; color: var(--gold);
+    margin: 0.9rem auto 0; display: block; cursor: pointer;
+    font-size: 0.78rem; text-decoration: underline;
+    text-underline-offset: 4px;
+  }
+  .signup-note {
+    font-size: 0.84rem; line-height: 1.55; color: var(--text-2);
+    text-align: center; margin: -1rem 0 1.4rem;
+  }
   .login-foot {
     margin-top: 2rem; text-align: center;
     font-family: var(--mono); font-size: 0.62rem;
@@ -539,6 +549,28 @@
     border-bottom: 1px solid var(--line);
     margin-bottom: 2rem;
   }
+  .module-layout {
+    display: grid;
+    grid-template-columns: minmax(230px, 300px) minmax(0, 1fr);
+    gap: 1.25rem;
+    align-items: start;
+  }
+  .chapter-sidebar {
+    position: sticky;
+    top: 86px;
+    max-height: calc(100vh - 110px);
+    overflow-y: auto;
+    padding-right: 0.25rem;
+  }
+  .chapter-sidebar-title {
+    font-family: var(--mono); font-size: 0.66rem;
+    color: var(--gold); letter-spacing: 0.18em;
+    text-transform: uppercase; margin-bottom: 0.75rem;
+  }
+  .drawer-close { display: none; }
+  .chapter-main { min-width: 0; }
+  .btn-sec.chapter-drawer-toggle { display: none; margin-bottom: 1rem; width: auto; }
+  .chapter-drawer-backdrop { display: none; }
   .module-view-bereich-tag {
     font-family: var(--mono); font-size: 0.66rem;
     color: var(--gold); letter-spacing: 0.2em;
@@ -561,7 +593,7 @@
   /* ========== CHAPTER LIST ========== */
   .chapter-list {
     display: flex; flex-direction: column; gap: 0.5rem;
-    margin-bottom: 2rem;
+    margin-bottom: 0;
   }
   .chapter-item {
     background: var(--paper);
@@ -860,6 +892,34 @@
     .stat:last-child { border-bottom: none; }
     .chapter-nav .btn-sec { max-width: 100%; }
   }
+  @media (max-width: 820px) {
+    .module-layout { display: block; }
+    .chapter-sidebar {
+      position: fixed; top: 0; bottom: 0; left: 0;
+      width: min(86vw, 340px); max-height: none;
+      background: var(--paper);
+      border-right: 1px solid var(--line);
+      z-index: 220; padding: 1.1rem;
+      transform: translateX(-105%);
+      transition: transform 0.22s ease;
+      box-shadow: 24px 0 50px rgba(0,0,0,0.45);
+    }
+    body.chapter-drawer-open .chapter-sidebar { transform: translateX(0); }
+    .chapter-drawer-backdrop {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.55);
+      z-index: 210;
+    }
+    body.chapter-drawer-open .chapter-drawer-backdrop { display: block; }
+    .btn-sec.chapter-drawer-toggle { display: inline-flex; }
+    .chapter-sidebar-title {
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .drawer-close {
+      display: inline-block;
+      background: none; border: 1px solid var(--line); color: var(--text-2);
+      width: 32px; height: 32px; border-radius: 4px; cursor: pointer;
+    }
+  }
 </style>
 </head>
 <body>
@@ -869,15 +929,37 @@
     <div class="login-crest"></div>
     <div class="login-logo">Woinemer <em>Onboarding</em></div>
     <div class="login-sub">Braumanufaktur Brennerei Restaurant</div>
-    <label>Benutzername</label>
-    <input type="text" id="login-user" placeholder="dein.name" autocomplete="username">
+    <label>E-Mail oder Benutzername</label>
+    <input type="text" id="login-user" placeholder="dein.name@woinemer.de" autocomplete="username">
     <label>Passwort</label>
     <input type="password" id="login-pass" placeholder="••••••••" autocomplete="current-password">
     <button class="btn-primary" id="btn-login" onclick="doLogin()">
       <span class="btn-spinner"></span>
       <span class="btn-label">Anmelden</span>
     </button>
+    <button class="login-link" type="button" onclick="requestPasswordResetUI(this)">Passwort vergessen?</button>
     <div class="login-error" id="login-err"></div>
+    <div class="login-foot">Woinemer Hausbrauerei 2026</div>
+  </div>
+</div>
+
+<div id="signup-screen" style="display:none;">
+  <div class="login-box">
+    <div class="login-crest"></div>
+    <div class="login-logo">Woinemer <em>Onboarding</em></div>
+    <div class="signup-note" id="signup-note">Zugang einrichten</div>
+    <label>Name</label>
+    <input type="text" id="signup-name" placeholder="Max Mustermann" autocomplete="name">
+    <label>E-Mail</label>
+    <input type="email" id="signup-email" placeholder="max@woinemer.de" autocomplete="email">
+    <label>Passwort</label>
+    <input type="password" id="signup-pass" placeholder="Mindestens 8 Zeichen" autocomplete="new-password">
+    <button class="btn-primary" id="btn-signup" onclick="submitSignup()">
+      <span class="btn-spinner"></span>
+      <span class="btn-label">Zugang erstellen</span>
+    </button>
+    <button class="login-link" type="button" onclick="showLoginScreen()">Zur Anmeldung</button>
+    <div class="login-error" id="signup-err"></div>
     <div class="login-foot">Woinemer Hausbrauerei 2026</div>
   </div>
 </div>
@@ -885,7 +967,7 @@
 <nav id="main-nav" style="display:none;">
   <div class="nav-brand">
     <div>
-      Woinemer Academy
+      Woinemer Onboarding
       <small>Lernwerkstatt</small>
     </div>
   </div>
@@ -941,9 +1023,15 @@
       <div class="module-view-title" id="mv-title"></div>
       <div class="module-view-meta" id="mv-desc"></div>
     </div>
-    <div class="section-label">Kapitel</div>
-    <div class="chapter-list" id="chapter-list"></div>
-    <div id="chapter-content-wrap"></div>
+    <button class="btn-sec chapter-drawer-toggle" onclick="openChapterDrawer()">Kapitel öffnen</button>
+    <div class="chapter-drawer-backdrop" onclick="closeChapterDrawer()"></div>
+    <div class="module-layout">
+      <aside class="chapter-sidebar">
+        <div class="chapter-sidebar-title">Kapitel <button class="drawer-close" onclick="closeChapterDrawer()">×</button></div>
+        <div class="chapter-list" id="chapter-list"></div>
+      </aside>
+      <div class="chapter-main" id="chapter-content-wrap"></div>
+    </div>
   </div>
 </div>
 
@@ -985,13 +1073,13 @@ var API = (function() {
   var params = new URLSearchParams(window.location.search);
   var queryApi = params.get('api');
   if (queryApi) {
-    try { localStorage.setItem('woinemer_academy_api', queryApi); } catch(e) {}
+    try { localStorage.setItem('woinemer_onboarding_api', queryApi); } catch(e) {}
     return queryApi;
   }
 
-  if (window.WOINEMER_ACADEMY_API) return window.WOINEMER_ACADEMY_API;
+  if (window.WOINEMER_ONBOARDING_API) return window.WOINEMER_ONBOARDING_API;
   try {
-    var storedApi = localStorage.getItem('woinemer_academy_api');
+    var storedApi = localStorage.getItem('woinemer_onboarding_api');
     if (storedApi) return storedApi;
   } catch(e) {}
 
@@ -1007,6 +1095,9 @@ var modulesCache = [];
 var bereichStatusCache = [];
 var isAdminUser = false;
 var certificateCache = [];
+var certificateSettings = { enabled: true, auto_generate: true, email_enabled: false };
+var signupContext = null;
+var SESSION_STORAGE_KEY = 'woinemer_onboarding_session_v1';
 
 function setButtonLoading(btn, label) {
   if (!btn) return function(){};
@@ -1033,7 +1124,7 @@ function setButtonLoading(btn, label) {
 
 function initialDataCacheKey() {
   if (!session || !session.user) return '';
-  return 'woinemer_academy_initial_' + (session.user.user_id || session.user.name || 'user');
+  return 'woinemer_onboarding_initial_' + (session.user.user_id || session.user.name || 'user');
 }
 
 function readInitialDataCache() {
@@ -1061,6 +1152,7 @@ function applyInitialData(res, options) {
   bereichStatusCache = res.bereichStatus || [];
   userProgress       = { progress: res.progress || [], quizResults: res.quizResults || [] };
   lastNews           = res.news || [];
+  certificateSettings = res.certificateSettings || certificateSettings;
 
   renderStats();
   renderNews(lastNews);
@@ -1070,6 +1162,55 @@ function applyInitialData(res, options) {
 }
 
 // ================= LOGIN =================
+function saveSession() {
+  try { localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(session)); } catch(e) {}
+}
+
+function clearStoredSession() {
+  try { localStorage.removeItem(SESSION_STORAGE_KEY); } catch(e) {}
+}
+
+function readStoredSession() {
+  try { return JSON.parse(localStorage.getItem(SESSION_STORAGE_KEY) || 'null'); } catch(e) { return null; }
+}
+
+function restoreSessionIfPossible() {
+  var stored = readStoredSession();
+  if (!stored || !stored.token) return false;
+  session = stored;
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('signup-screen').style.display = 'none';
+  api({ action: 'validateSession', token: stored.token }, function(res) {
+    if (res.ok) {
+      session.user = res.user || stored.user;
+      saveSession();
+      loadApp();
+    } else {
+      session = null;
+      clearStoredSession();
+      showLoginScreen();
+    }
+  });
+  return true;
+}
+
+function showLoginScreen() {
+  document.getElementById('signup-screen').style.display = 'none';
+  document.getElementById('login-screen').style.display = 'flex';
+  document.getElementById('main-nav').style.display = 'none';
+  hideAllScreens();
+}
+
+function showSignupScreen(area, invite) {
+  signupContext = { area: area, invite: invite };
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('signup-screen').style.display = 'flex';
+  document.getElementById('main-nav').style.display = 'none';
+  hideAllScreens();
+  var label = area === 'kueche' ? 'Küche' : 'Service';
+  document.getElementById('signup-note').textContent = 'Zugang fuer den Bereich ' + label + ' einrichten.';
+}
+
 function doLogin() {
   var btn = document.getElementById('btn-login');
   if (btn.classList.contains('loading')) return;
@@ -1089,7 +1230,7 @@ function doLogin() {
     btn.classList.remove('loading');
     btn.disabled = false;
     btn.querySelector('.btn-label').textContent = 'Anmelden';
-    if (res.ok) { session = res; loadApp(); }
+    if (res.ok) { session = res; saveSession(); loadApp(); }
     else { err.textContent = res.error || 'Anmeldung fehlgeschlagen'; err.style.display = 'block'; }
   });
 }
@@ -1100,21 +1241,83 @@ function doLogin() {
 });
 
 function logout() {
+  var oldToken = session && session.token;
+  if (oldToken) api({ action: 'logout', token: oldToken }, function(){});
   session = null;
   isAdminUser = false;
   certificateCache = [];
+  clearStoredSession();
   document.getElementById('main-nav').style.display = 'none';
   document.getElementById('login-screen').style.display = 'flex';
+  document.getElementById('signup-screen').style.display = 'none';
   hideAllScreens();
 }
 
 function loadApp() {
   document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('signup-screen').style.display = 'none';
   document.getElementById('main-nav').style.display = 'flex';
   document.getElementById('nav-name').textContent = session.user.name;
   document.getElementById('welcome-name').textContent = session.user.name.split(' ')[0];
   isAdminUser = (session.user.role || '') === 'admin';
   showHome();
+}
+
+function submitSignup() {
+  var btn = document.getElementById('btn-signup');
+  if (btn.classList.contains('loading')) return;
+  var err = document.getElementById('signup-err');
+  err.style.display = 'none';
+  var payload = {
+    action: 'registerWithInvite',
+    signup: signupContext ? signupContext.area : '',
+    invite: signupContext ? signupContext.invite : '',
+    name: document.getElementById('signup-name').value.trim(),
+    email: document.getElementById('signup-email').value.trim(),
+    password: document.getElementById('signup-pass').value
+  };
+  if (!payload.name || !payload.email || !payload.password) {
+    err.textContent = 'Bitte alle Felder ausfüllen';
+    err.style.display = 'block';
+    return;
+  }
+  var restore = setButtonLoading(btn, 'Erstelle Zugang ...');
+  api(payload, function(res) {
+    restore();
+    err.textContent = res.message || res.error || '';
+    err.style.display = 'block';
+    if (res.ok) {
+      document.getElementById('signup-pass').value = '';
+    }
+  });
+}
+
+function requestPasswordResetUI(btn) {
+  var email = document.getElementById('login-user').value.trim();
+  var err = document.getElementById('login-err');
+  err.style.display = 'none';
+  if (!email) {
+    err.textContent = 'Bitte trage deine E-Mail-Adresse ein.';
+    err.style.display = 'block';
+    return;
+  }
+  var restore = setButtonLoading(btn, 'Sende Link ...');
+  api({ action: 'requestPasswordReset', email: email }, function(res) {
+    restore();
+    err.textContent = res.message || res.error || 'Wenn die E-Mail bekannt ist, wurde ein Link gesendet.';
+    err.style.display = 'block';
+  });
+}
+
+function initAuthScreen() {
+  var params = new URLSearchParams(window.location.search);
+  var signup = (params.get('signup') || '').toLowerCase();
+  var invite = params.get('invite') || '';
+  if ((signup === 'service' || signup === 'kueche') && invite) {
+    showSignupScreen(signup, invite);
+    return;
+  }
+  if (!restoreSessionIfPossible()) showLoginScreen();
 }
 
 // ================= HELPER =================
@@ -1159,6 +1362,7 @@ function hideAllScreens() {
 
 // ================= HOME =================
 function showHome() {
+  closeChapterDrawer();
   hideAllScreens();
   document.getElementById('home-screen').classList.add('active');
   loadInitialData();
@@ -1341,6 +1545,7 @@ function renderModuleGrid() {
 function renderBereichstestSection() {
   var sec = document.getElementById('bereichstest-section');
   sec.innerHTML = '';
+  if (certificateSettings && certificateSettings.enabled === false) return;
   if (!bereichStatusCache.length) return;
 
   var label = document.createElement('div');
@@ -1390,11 +1595,14 @@ function refreshCertificateButtons(options) {
   options = options || {};
   var wrap = document.getElementById('cert-buttons');
   wrap.innerHTML = '';
+  if (certificateSettings && certificateSettings.enabled === false) return;
   api({ action: 'getCertificateInfo', token: session.token }, function(res) {
     if (!res.ok) {
       if (!options.silent) toast('Zertifikate konnten nicht geladen werden');
       return;
     }
+    if (res.disabled) return;
+    if (res.settings) certificateSettings = res.settings;
     certificateCache = res.certificates || [];
     certificateCache.forEach(function(c) {
       if (!c.available) return;
@@ -1446,6 +1654,14 @@ function openModule(m) {
 
 function showModuleView(m) { if (m) openModule(m); }
 
+function openChapterDrawer() {
+  document.body.classList.add('chapter-drawer-open');
+}
+
+function closeChapterDrawer() {
+  document.body.classList.remove('chapter-drawer-open');
+}
+
 function renderChapterList() {
   var list = document.getElementById('chapter-list');
   list.innerHTML = '';
@@ -1485,6 +1701,7 @@ function renderChapterList() {
 
 function openChapter(c, idx) {
   if (!isChapterUnlocked(idx)) return;
+  closeChapterDrawer();
   document.querySelectorAll('.chapter-item').forEach(function(el) { el.classList.remove('active-ch'); });
   var item = document.getElementById('ch-item-' + c.chapter_id);
   if (item) item.classList.add('active-ch');
@@ -1604,6 +1821,7 @@ function markDone(chapterId, idx, btn) {
 function showModuleQuiz() {
   if (!allChaptersDone()) { toast('Bitte schließe erst alle Kapitel ab!'); return; }
   if (!currentQuiz || !currentQuiz.length) return;
+  closeChapterDrawer();
   hideAllScreens();
   document.getElementById('quiz-screen').classList.add('active');
   window.scrollTo(0, 0);
@@ -1781,7 +1999,7 @@ function showQuizResult(res, pct, isFinal) {
     '<div style="margin-top:1rem;">' + againBtn + backBtn + '</div>';
   document.getElementById('quiz-wrap').appendChild(result);
 
-  if (isFinal && res.passed) {
+  if (isFinal && res.passed && (!certificateSettings || certificateSettings.enabled !== false)) {
     setTimeout(function() { showCongrats(currentFinalQuiz.bereich); }, 800);
   }
 }
@@ -1902,7 +2120,7 @@ function api(body, cb) {
 }
 
 function jsonpApi(body, cb) {
-  var callbackName = '__academy_jsonp_' + Date.now() + '_' + Math.floor(Math.random() * 1000000);
+  var callbackName = '__onboarding_jsonp_' + Date.now() + '_' + Math.floor(Math.random() * 1000000);
   var sep = API.indexOf('?') === -1 ? '?' : '&';
   var script = document.createElement('script');
   var done = false;
@@ -1967,7 +2185,12 @@ function toast(msg) {
     window.location.hostname === '127.0.0.1';
   if (!demoRequested && (!localPreview || API)) return;
   // Mock mode
-  var mockUser = { name: 'Anna Schuster', role: 'employee' };
+  var mockUser = { user_id: 'demo-user', name: 'Anna Schuster', role: 'employee' };
+  if (window.location.search.indexOf('autologin=1') > -1) {
+    try {
+      localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify({ ok:true, token:'demo', user: mockUser }));
+    } catch(e) {}
+  }
   var mockModules = [
     { module_id:'m1', title:'Hygiene & HACCP', description:'Die Grundlagen der Küchenhygiene, Kontrollpunkte und Reinigungsroutinen nach HACCP.', bereich:'Küche', order_index:1, pflicht:true, quiz_min_score:70, locked:false, total_chapters:6, done_chapters:6, passed:true },
     { module_id:'m2', title:'Messerkunde & Schnitttechnik', description:'Vom Julienne bis Brunoise – sauber, sicher und effizient arbeiten am Board.', bereich:'Küche', order_index:2, pflicht:true, quiz_min_score:70, locked:false, total_chapters:5, done_chapters:3, passed:false },
@@ -2008,6 +2231,10 @@ function toast(msg) {
     setTimeout(function() {
       var a = body.action;
       if (a === 'login') cb({ ok:true, token:'demo', user: mockUser });
+      else if (a === 'validateSession') cb({ ok:true, user: mockUser });
+      else if (a === 'logout') cb({ ok:true });
+      else if (a === 'requestPasswordReset') cb({ ok:true, message:'Demo: Reset-Link wuerde per Mail versendet.' });
+      else if (a === 'registerWithInvite') cb({ ok:true, message:'Demo: Bitte bestaetige deine E-Mail-Adresse.' });
       else if (a === 'getInitialData') cb({ ok:true, isAdmin:false, modules: mockModules, bereichStatus: mockBereichStatus, news: mockNews, progress:[
         {chapter_id:'c1', module_id:'m2', status:'completed'},
         {chapter_id:'c2', module_id:'m2', status:'completed'},
@@ -2020,7 +2247,7 @@ function toast(msg) {
       ] });
       else if (a === 'getCertificateInfo') cb({ ok:true, certificates: [{bereich:'Brauerei', available:false, passed:false, isAdmin:false}], name: mockUser.name });
       else if (a === 'getChapters') cb({ ok:true, chapters:[
-        { chapter_id:'c1', title:'Einführung', content_html:'<h2>Willkommen im Kapitel</h2><p>Dies ist ein Demo-Kapitel. In der Live-Umgebung werden hier Inhalte, Bilder und Videos aus der Academy geladen.</p><p><strong>Wichtig:</strong> Das Design ist voll funktionsfähig — lediglich die Daten sind hier Platzhalter.</p>', order_index:1 },
+        { chapter_id:'c1', title:'Einführung', content_html:'<h2>Willkommen im Kapitel</h2><p>Dies ist ein Demo-Kapitel. In der Live-Umgebung werden hier Inhalte, Bilder und Videos aus dem Onboarding geladen.</p><p><strong>Wichtig:</strong> Das Design ist voll funktionsfähig — lediglich die Daten sind hier Platzhalter.</p>', order_index:1 },
         { chapter_id:'c2', title:'Grundtechniken', content_html:'<h2>Grundtechniken</h2><p>Dies ist Kapitel zwei.</p>', order_index:2 }
       ], quiz: mockModuleQuiz.map(function(q){ return { question:q.question, options:q.options }; }) });
       else if (a === 'saveProgress') cb({ ok:true });
@@ -2038,6 +2265,7 @@ function toast(msg) {
     }, 150);
   };
 })();
+initAuthScreen();
 </script>
 </body>
 </html>

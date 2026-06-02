@@ -1,6 +1,6 @@
-# Woinemer Academy Frontend
+# Woinemer Onboarding Frontend
 
-Static GitHub Pages frontend for the employee-facing Woinemer Academy.
+Static GitHub Pages frontend for the employee-facing Woinemer Onboarding.
 
 The admin UI and all data operations stay in Google Apps Script. This repo intentionally contains only the public user frontend and no GAS secrets such as Sheet IDs, admin tokens, or PINs.
 
@@ -11,7 +11,7 @@ The admin UI and all data operations stay in Google Apps Script. This repo inten
 3. Copy the deployment `/exec` URL into `config.js`:
 
 ```js
-window.WOINEMER_ACADEMY_API = 'https://script.google.com/macros/s/.../exec';
+window.WOINEMER_ONBOARDING_API = 'https://script.google.com/macros/s/.../exec';
 ```
 
 For quick testing, the URL can also be passed once via:

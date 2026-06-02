@@ -23,11 +23,11 @@ const loader = `<!doctype html>
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Woinemer Academy</title>
+  <title>Woinemer Onboarding</title>
 </head>
 <body>
   <noscript>Bitte JavaScript aktivieren.</noscript>
-  <p id="boot-status" style="font-family:system-ui,-apple-system,Segoe UI,sans-serif;padding:24px;color:#334155">Woinemer Academy wird geladen ...</p>
+  <p id="boot-status" style="font-family:system-ui,-apple-system,Segoe UI,sans-serif;padding:24px;color:#334155">Woinemer Onboarding wird geladen ...</p>
   <script>
   (async () => {
     try {

@@ -1,4 +1,35 @@
-column: 1 / -1; }
+: 0.1em; text-transform: uppercase;
+  }
+  .quiz-failed {
+    color: var(--red); font-size: 0.9rem; margin-top: 0.75rem;
+    font-family: var(--mono); letter-spacing: 0.1em; text-transform: uppercase;
+  }
+
+  /* ========== TOAST ========== */
+  .toast {
+    position: fixed; bottom: 1.75rem; right: 1.75rem;
+    background: var(--paper);
+    border: 1px solid var(--gold);
+    color: var(--text);
+    padding: 0.85rem 1.3rem;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    transform: translateY(80px); opacity: 0;
+    transition: all 0.3s;
+    z-index: 999;
+    box-shadow: 0 20px 40px -10px rgba(0,0,0,0.5);
+    max-width: 360px;
+  }
+  .toast.show { transform: translateY(0); opacity: 1; }
+
+  /* ========== SPINNER ========== */
+  .spinner {
+    display: inline-block; width: 22px; height: 22px;
+    border: 2px solid var(--line); border-top-color: var(--gold);
+    border-radius: 50%; animation: spin 0.7s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading-center { display: flex; justify-content: center; padding: 3rem; grid-column: 1 / -1; }
 
   /* ========== EMPTY STATE ========== */
   .empty-state {
@@ -87,6 +118,34 @@ column: 1 / -1; }
     .stat:last-child { border-bottom: none; }
     .chapter-nav .btn-sec { max-width: 100%; }
   }
+  @media (max-width: 820px) {
+    .module-layout { display: block; }
+    .chapter-sidebar {
+      position: fixed; top: 0; bottom: 0; left: 0;
+      width: min(86vw, 340px); max-height: none;
+      background: var(--paper);
+      border-right: 1px solid var(--line);
+      z-index: 220; padding: 1.1rem;
+      transform: translateX(-105%);
+      transition: transform 0.22s ease;
+      box-shadow: 24px 0 50px rgba(0,0,0,0.45);
+    }
+    body.chapter-drawer-open .chapter-sidebar { transform: translateX(0); }
+    .chapter-drawer-backdrop {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.55);
+      z-index: 210;
+    }
+    body.chapter-drawer-open .chapter-drawer-backdrop { display: block; }
+    .btn-sec.chapter-drawer-toggle { display: inline-flex; }
+    .chapter-sidebar-title {
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .drawer-close {
+      display: inline-block;
+      background: none; border: 1px solid var(--line); color: var(--text-2);
+      width: 32px; height: 32px; border-radius: 4px; cursor: pointer;
+    }
+  }
 </style>
 </head>
 <body>
@@ -96,15 +155,37 @@ column: 1 / -1; }
     <div class="login-crest"></div>
     <div class="login-logo">Woinemer <em>Onboarding</em></div>
     <div class="login-sub">Braumanufaktur Brennerei Restaurant</div>
-    <label>Benutzername</label>
-    <input type="text" id="login-user" placeholder="dein.name" autocomplete="username">
+    <label>E-Mail oder Benutzername</label>
+    <input type="text" id="login-user" placeholder="dein.name@woinemer.de" autocomplete="username">
     <label>Passwort</label>
     <input type="password" id="login-pass" placeholder="••••••••" autocomplete="current-password">
     <button class="btn-primary" id="btn-login" onclick="doLogin()">
       <span class="btn-spinner"></span>
       <span class="btn-label">Anmelden</span>
     </button>
+    <button class="login-link" type="button" onclick="requestPasswordResetUI(this)">Passwort vergessen?</button>
     <div class="login-error" id="login-err"></div>
+    <div class="login-foot">Woinemer Hausbrauerei 2026</div>
+  </div>
+</div>
+
+<div id="signup-screen" style="display:none;">
+  <div class="login-box">
+    <div class="login-crest"></div>
+    <div class="login-logo">Woinemer <em>Onboarding</em></div>
+    <div class="signup-note" id="signup-note">Zugang einrichten</div>
+    <label>Name</label>
+    <input type="text" id="signup-name" placeholder="Max Mustermann" autocomplete="name">
+    <label>E-Mail</label>
+    <input type="email" id="signup-email" placeholder="max@woinemer.de" autocomplete="email">
+    <label>Passwort</label>
+    <input type="password" id="signup-pass" placeholder="Mindestens 8 Zeichen" autocomplete="new-password">
+    <button class="btn-primary" id="btn-signup" onclick="submitSignup()">
+      <span class="btn-spinner"></span>
+      <span class="btn-label">Zugang erstellen</span>
+    </button>
+    <button class="login-link" type="button" onclick="showLoginScreen()">Zur Anmeldung</button>
+    <div class="login-error" id="signup-err"></div>
     <div class="login-foot">Woinemer Hausbrauerei 2026</div>
   </div>
 </div>
@@ -112,7 +193,7 @@ column: 1 / -1; }
 <nav id="main-nav" style="display:none;">
   <div class="nav-brand">
     <div>
-      Woinemer Academy
+      Woinemer Onboarding
       <small>Lernwerkstatt</small>
     </div>
   </div>
@@ -165,109 +246,4 @@ column: 1 / -1; }
     <button class="back-btn" onclick="showHome()">Zurück zur Übersicht</button>
     <div class="mv-header">
       <div class="module-view-bereich-tag" id="mv-bereich"></div>
-      <div class="module-view-title" id="mv-title"></div>
-      <div class="module-view-meta" id="mv-desc"></div>
-    </div>
-    <div class="section-label">Kapitel</div>
-    <div class="chapter-list" id="chapter-list"></div>
-    <div id="chapter-content-wrap"></div>
-  </div>
-</div>
-
-<div id="quiz-screen" class="screen">
-  <div class="page-wrap">
-    <button class="back-btn" id="quiz-back-btn">Zurück</button>
-    <div class="quiz-wrap" id="quiz-wrap"></div>
-  </div>
-</div>
-
-<div class="toast" id="toast"></div>
-
-<!-- KONFETTI + GLUECKWUNSCH -->
-<div id="confetti-overlay">
-  <canvas id="confetti-canvas"></canvas>
-  <div class="gz-card">
-    <div class="gz-crest"></div>
-    <div class="gz-kicker">Ausgezeichnet</div>
-    <div class="gz-title">Herzlichen <em>Glückwunsch</em></div>
-    <div class="gz-text">
-      Du hast erfolgreich alle Module und den Abschlusstest für den Bereich
-      <span class="gz-bereich" id="gz-bereich"></span> bestanden. Dein Zertifikat steht zum Download bereit.
-    </div>
-    <div class="gz-actions">
-      <button class="gz-btn primary" id="gz-download">📜 Zertifikat herunterladen</button>
-      <button class="gz-btn secondary" onclick="closeConfetti()">Später</button>
-    </div>
-  </div>
-</div>
-
-<script src="./config.js"></script>
-<script>
-var API = (function() {
-  var templateApi = '<?= ScriptApp.getService().getUrl() ?>';
-  if (templateApi && templateApi.indexOf('<?') === -1 && templateApi.indexOf('ScriptApp') === -1) {
-    return templateApi;
-  }
-
-  var params = new URLSearchParams(window.location.search);
-  var queryApi = params.get('api');
-  if (queryApi) {
-    try { localStorage.setItem('woinemer_academy_api', queryApi); } catch(e) {}
-    return queryApi;
-  }
-
-  if (window.WOINEMER_ACADEMY_API) return window.WOINEMER_ACADEMY_API;
-  try {
-    var storedApi = localStorage.getItem('woinemer_academy_api');
-    if (storedApi) return storedApi;
-  } catch(e) {}
-
-  return '';
-})();
-var session = null;
-var currentModule = null;
-var currentChapters = [];
-var currentQuiz = [];
-var currentFinalQuiz = null;
-var userProgress = { progress: [], quizResults: [] };
-var modulesCache = [];
-var bereichStatusCache = [];
-var isAdminUser = false;
-var certificateCache = [];
-
-function setButtonLoading(btn, label) {
-  if (!btn) return function(){};
-  var oldHtml = btn.innerHTML;
-  var oldText = btn.textContent;
-  var oldDisabled = btn.disabled;
-  btn.disabled = true;
-  btn.classList.add('loading');
-  if (label) {
-    var labelEl = btn.querySelector('.btn-label');
-    if (labelEl) labelEl.textContent = label;
-    else btn.innerHTML = label;
-  }
-  return function() {
-    btn.disabled = oldDisabled;
-    btn.classList.remove('loading');
-    if (label) {
-      var labelEl = btn.querySelector('.btn-label');
-      if (labelEl) labelEl.textContent = oldText.trim() || oldHtml;
-      else btn.innerHTML = oldHtml;
-    }
-  };
-}
-
-function initialDataCacheKey() {
-  if (!session || !session.user) return '';
-  return 'woinemer_academy_initial_' + (session.user.user_id || session.user.name || 'user');
-}
-
-function readInitialDataCache() {
-  var key = initialDataCacheKey();
-  if (!key) return null;
-  try {
-    var cached = JSON.parse(localStorage.getItem(key) || 'null');
-    if (!cached || !cached.data || (Date.now() - cached.ts) > 10 * 60 * 1000) return null;
-    return cached.data;
-  } catch(e) {
+      <div class="module-view-titl
