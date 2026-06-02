@@ -1,0 +1,2054 @@
+
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Woinemer Academy</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Serif:ital,wght@0,400;0,500;1,400&family=Spline+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --gold: #C9A96A;
+    --gold-deep: #a8864b;
+    --gold-light: rgba(201,169,106,0.14);
+    --gold-line: rgba(201,169,106,0.28);
+    --copper: #B87333;
+    --ink: #0b0a08;
+    --ink-2: #131210;
+    --paper: #1a1815;
+    --paper-2: #221f1b;
+    --line: #2a2621;
+    --line-soft: #1f1c18;
+    --text: #ece6d8;
+    --text-2: #b8b0a0;
+    --muted: #7a7265;
+    --green: #8BAD5E;
+    --green-soft: rgba(139,173,94,0.14);
+    --red: #c95a4a;
+    --serif: 'IBM Plex Serif', 'Georgia', serif;
+    --sans: 'Spline Sans', -apple-system, sans-serif;
+    --mono: 'JetBrains Mono', ui-monospace, monospace;
+  }
+  html, body { background: var(--ink); }
+  body {
+    font-family: var(--sans);
+    color: var(--text);
+    min-height: 100vh;
+    font-feature-settings: "ss01", "ss02";
+    -webkit-font-smoothing: antialiased;
+    background:
+      radial-gradient(1200px 600px at 85% -10%, rgba(201,169,106,0.06), transparent 60%),
+      radial-gradient(900px 500px at -10% 110%, rgba(184,115,51,0.05), transparent 55%),
+      var(--ink);
+    background-attachment: fixed;
+  }
+  /* subtle paper grain */
+  body::before {
+    content: '';
+    position: fixed; inset: 0; pointer-events: none; z-index: 0;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.8  0 0 0 0 0.7  0 0 0 0 0.5  0 0 0 0.035 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+    opacity: 0.7;
+    mix-blend-mode: overlay;
+  }
+  #login-screen, nav, .screen, .toast, #confetti-overlay { position: relative; z-index: 1; }
+
+  a { color: inherit; }
+  button { font-family: inherit; }
+
+  /* ========== NAV ========== */
+  nav {
+    background: rgba(11,10,8,0.78);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border-bottom: 1px solid var(--line);
+    padding: 0.85rem 2rem;
+    display: flex; align-items: center; justify-content: space-between;
+    position: sticky; top: 0; z-index: 100;
+    flex-wrap: wrap; gap: 0.75rem;
+  }
+  .nav-brand {
+    font-family: var(--serif);
+    color: var(--text);
+    font-size: 1.05rem;
+    letter-spacing: 0.01em;
+    display: flex; align-items: center; gap: 0.65rem;
+  }
+  .nav-brand::before {
+    content: '';
+    width: 22px; height: 22px;
+    background:
+      radial-gradient(circle at 50% 50%, var(--gold) 0%, var(--gold) 28%, transparent 30%),
+      conic-gradient(from 0deg, var(--gold-deep), var(--gold), var(--copper), var(--gold-deep));
+    border-radius: 50%;
+    box-shadow: 0 0 0 1px rgba(201,169,106,0.3), inset 0 0 0 3px var(--ink);
+  }
+  .nav-brand small {
+    display: block;
+    font-family: var(--mono);
+    font-size: 0.62rem;
+    color: var(--muted);
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    margin-top: 2px;
+  }
+  .nav-user { font-size: 0.78rem; color: var(--text-2); display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; }
+  .nav-user span { color: var(--text); }
+  #nav-name { display: inline-flex; align-items: center; gap: 0.5rem; padding-left: 0.75rem; border-left: 1px solid var(--line); }
+  #nav-name::before {
+    content: ''; width: 26px; height: 26px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--gold-deep), var(--copper));
+    border: 1px solid var(--gold-line);
+  }
+  .btn-logout {
+    background: none; border: 1px solid var(--line); color: var(--muted);
+    padding: 6px 12px; border-radius: 3px; cursor: pointer; font-size: 0.72rem;
+    font-family: var(--mono); letter-spacing: 0.08em; text-transform: uppercase;
+    transition: all 0.2s;
+  }
+  .btn-logout:hover { border-color: var(--red); color: var(--red); }
+  .btn-rezept, .btn-cert {
+    background: transparent;
+    border: 1px solid var(--gold-line);
+    color: var(--gold);
+    padding: 6px 14px; border-radius: 3px; cursor: pointer;
+    font-size: 0.75rem; font-family: var(--sans); font-weight: 500;
+    text-decoration: none; display: inline-flex; align-items: center; gap: 6px;
+    transition: all 0.2s; white-space: nowrap;
+    letter-spacing: 0.02em;
+  }
+  .btn-rezept:hover, .btn-cert:hover { background: var(--gold-light); border-color: var(--gold); color: var(--text); }
+  .btn-cert.admin-only { border-style: dashed; opacity: 0.8; }
+
+  /* ========== SCREENS ========== */
+  .screen { display: none; }
+  .screen.active { display: block; }
+
+  /* ========== LOGIN ========== */
+  #login-screen {
+    display: flex; align-items: center; justify-content: center;
+    min-height: 100vh; padding: 2rem;
+  }
+  .login-box {
+    width: 100%; max-width: 440px;
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 3rem 2.5rem 2.5rem;
+    position: relative;
+    box-shadow: 0 40px 80px -20px rgba(0,0,0,0.6), 0 0 0 1px rgba(201,169,106,0.04);
+  }
+  .login-box::before {
+    content: ''; position: absolute; inset: 6px; border: 1px solid var(--gold-line);
+    border-radius: 6px; pointer-events: none; opacity: 0.35;
+  }
+  .login-crest {
+    display: flex; align-items: center; justify-content: center;
+    width: 68px; height: 68px; margin: 0 auto 1.25rem;
+    border: 1px solid var(--gold-line);
+    border-radius: 50%;
+    position: relative;
+  }
+  .login-crest::before {
+    content: '';
+    width: 46px; height: 46px; border-radius: 50%;
+    background:
+      radial-gradient(circle at 35% 30%, rgba(255,220,170,0.4), transparent 45%),
+      conic-gradient(from 30deg, var(--gold-deep), var(--gold), var(--copper), var(--gold-deep));
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,0.1);
+  }
+  .login-crest::after {
+    content: 'W';
+    position: absolute;
+    font-family: var(--serif); font-style: italic; font-weight: 500;
+    color: var(--ink); font-size: 1.5rem;
+    text-shadow: 0 1px 0 rgba(255,255,255,0.25);
+  }
+  .login-logo {
+    font-family: var(--serif);
+    font-size: 1.75rem;
+    color: var(--text);
+    text-align: center;
+    letter-spacing: 0.01em;
+    margin-bottom: 0.4rem;
+  }
+  .login-logo em { font-style: italic; color: var(--gold); font-weight: 400; }
+  .login-sub {
+    font-family: var(--mono); font-size: 0.66rem;
+    color: var(--muted); text-align: center;
+    letter-spacing: 0.22em; text-transform: uppercase;
+    margin-bottom: 2.5rem;
+  }
+  .login-sub::before, .login-sub::after {
+    content: '·'; display: inline-block; margin: 0 0.6em; color: var(--gold);
+  }
+  .login-box label {
+    display: block;
+    font-family: var(--mono);
+    font-size: 0.66rem; font-weight: 500;
+    text-transform: uppercase; letter-spacing: 0.18em;
+    color: var(--gold); margin-bottom: 0.5rem;
+  }
+  .login-box input {
+    width: 100%; background: var(--ink-2);
+    border: 1px solid var(--line); color: var(--text);
+    padding: 12px 14px; border-radius: 4px;
+    font-family: var(--sans); font-size: 0.9rem;
+    margin-bottom: 1.4rem;
+    transition: border-color 0.2s, background 0.2s;
+  }
+  .login-box input:focus { outline: none; border-color: var(--gold); background: var(--ink); }
+  .btn-primary {
+    width: 100%; background: var(--gold); color: var(--ink);
+    border: none; padding: 13px; border-radius: 4px;
+    font-family: var(--sans); font-size: 0.85rem; font-weight: 600;
+    letter-spacing: 0.06em; text-transform: uppercase;
+    cursor: pointer; transition: all 0.2s;
+    display: inline-flex; align-items: center; justify-content: center; gap: 0.6rem;
+    position: relative;
+  }
+  .btn-primary:hover { background: #d8b87a; box-shadow: 0 8px 20px -6px rgba(201,169,106,0.4); }
+  .btn-primary:disabled { opacity: 0.55; cursor: not-allowed; }
+  .btn-primary .btn-spinner {
+    display: none; width: 14px; height: 14px;
+    border: 2px solid rgba(0,0,0,0.25); border-top-color: var(--ink);
+    border-radius: 50%; animation: spin 0.7s linear infinite;
+  }
+  .btn-primary.loading .btn-spinner { display: inline-block; }
+  .login-error { color: var(--red); font-size: 0.8rem; margin-top: 0.9rem; display: none; text-align: center; }
+  .login-foot {
+    margin-top: 2rem; text-align: center;
+    font-family: var(--mono); font-size: 0.62rem;
+    color: var(--muted); letter-spacing: 0.12em; text-transform: uppercase;
+  }
+  .login-foot::before, .login-foot::after { content: '— '; color: var(--line); }
+  .login-foot::after { content: ' —'; }
+
+  /* ========== PAGE WRAP ========== */
+  .page-wrap { max-width: 960px; margin: 0 auto; padding: 2.5rem 1.75rem 5rem; }
+
+  /* ========== WELCOME HEADER ========== */
+  .welcome-kicker {
+    font-family: var(--mono); font-size: 0.66rem;
+    color: var(--gold); letter-spacing: 0.22em;
+    text-transform: uppercase; margin-bottom: 0.75rem;
+    display: flex; align-items: center; gap: 0.6rem;
+  }
+  .welcome-kicker::after {
+    content: ''; flex: 1; height: 1px;
+    background: linear-gradient(90deg, var(--gold-line), transparent);
+  }
+  .welcome-head {
+    font-family: var(--serif); font-size: 2.4rem; line-height: 1.1;
+    color: var(--text); margin-bottom: 0.4rem; letter-spacing: -0.01em;
+  }
+  .welcome-head em { font-style: italic; color: var(--gold); }
+  .welcome-sub {
+    font-size: 0.92rem; color: var(--text-2);
+    margin-top: 0.3rem; max-width: 560px; line-height: 1.55;
+  }
+
+  /* ========== STATS STRIP ========== */
+  .stats-strip {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 0;
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    margin: 2rem 0 2.5rem;
+    overflow: hidden;
+  }
+  .stat {
+    padding: 1.1rem 1.4rem;
+    border-right: 1px solid var(--line-soft);
+    position: relative;
+  }
+  .stat:last-child { border-right: none; }
+  .stat-label {
+    font-family: var(--mono); font-size: 0.62rem;
+    color: var(--muted); letter-spacing: 0.16em;
+    text-transform: uppercase; margin-bottom: 0.5rem;
+  }
+  .stat-value {
+    font-family: var(--serif); font-size: 1.6rem;
+    color: var(--text); line-height: 1;
+    display: flex; align-items: baseline; gap: 0.3rem;
+  }
+  .stat-value .unit { font-size: 0.85rem; color: var(--muted); font-family: var(--sans); }
+  .stat-value em { font-style: italic; color: var(--gold); font-weight: 400; }
+  .stat-bar { margin-top: 0.6rem; height: 2px; background: var(--line); border-radius: 2px; overflow: hidden; }
+  .stat-bar-fill { height: 100%; background: var(--gold); transition: width 0.5s; }
+
+  /* ========== SECTION LABEL ========== */
+  .section-label {
+    font-family: var(--mono); font-size: 0.68rem;
+    color: var(--gold); letter-spacing: 0.22em;
+    text-transform: uppercase;
+    margin: 2.5rem 0 1.25rem;
+    display: flex; align-items: center; gap: 0.75rem;
+  }
+  .section-label::before {
+    content: '§'; font-family: var(--serif); font-style: italic;
+    font-size: 1.2rem; color: var(--gold); letter-spacing: 0;
+  }
+  .section-label::after {
+    content: ''; flex: 1; height: 1px;
+    background: linear-gradient(90deg, var(--gold-line), transparent 80%);
+  }
+  .section-label .count {
+    font-family: var(--mono); color: var(--muted);
+    letter-spacing: 0.1em;
+  }
+
+  /* ========== NEWS ========== */
+  .news-grid { display: flex; flex-direction: column; gap: 0.85rem; }
+  .news-card {
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 1.2rem 1.4rem 1.2rem 1.8rem;
+    position: relative;
+    transition: border-color 0.2s, transform 0.15s;
+  }
+  .news-card:hover { border-color: var(--gold-line); }
+  .news-card::before {
+    content: ''; position: absolute; left: 0; top: 16px; bottom: 16px;
+    width: 2px; background: var(--gold); border-radius: 2px;
+  }
+  .news-card.bereich::before { background: var(--green); }
+  .news-head-row { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem; flex-wrap: wrap; }
+  .news-bereich-tag {
+    font-family: var(--mono); font-size: 0.62rem;
+    font-weight: 500; text-transform: uppercase; letter-spacing: 0.15em;
+    color: var(--gold);
+    padding: 3px 9px; border: 1px solid var(--gold-line);
+    border-radius: 3px;
+  }
+  .news-card.bereich .news-bereich-tag { color: var(--green); border-color: rgba(139,173,94,0.3); }
+  .news-date {
+    font-family: var(--mono); font-size: 0.68rem;
+    color: var(--muted); letter-spacing: 0.08em;
+  }
+  .news-title {
+    font-family: var(--serif); font-size: 1.1rem;
+    color: var(--text); margin-bottom: 0.45rem;
+    line-height: 1.3;
+  }
+  .news-content {
+    font-size: 0.88rem; color: var(--text-2);
+    line-height: 1.65; white-space: pre-wrap;
+  }
+
+  /* ========== BEREICH GROUPS (modules grouped) ========== */
+  #module-grid { display: contents; }
+  .bereich-group { margin-bottom: 2.25rem; }
+  .bereich-head {
+    display: flex; align-items: flex-end; justify-content: space-between;
+    padding-bottom: 0.85rem;
+    border-bottom: 1px solid var(--line);
+    margin-bottom: 1.25rem;
+    gap: 1rem; flex-wrap: wrap;
+  }
+  .bereich-title-wrap { display: flex; align-items: baseline; gap: 0.9rem; }
+  .bereich-num {
+    font-family: var(--mono); font-size: 0.7rem;
+    color: var(--gold); letter-spacing: 0.12em;
+  }
+  .bereich-title {
+    font-family: var(--serif); font-size: 1.5rem;
+    color: var(--text); letter-spacing: -0.01em;
+  }
+  .bereich-title em { font-style: italic; color: var(--gold); }
+  .bereich-meta {
+    font-family: var(--mono); font-size: 0.68rem;
+    color: var(--muted); letter-spacing: 0.12em; text-transform: uppercase;
+    display: flex; align-items: center; gap: 0.8rem;
+  }
+  .bereich-meta .dot { width: 4px; height: 4px; background: var(--muted); border-radius: 50%; display: inline-block; }
+  .bereich-meta .ok { color: var(--green); }
+
+  .module-grid-inner {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1rem;
+  }
+
+  /* ========== MODULE CARD ========== */
+  .module-card {
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 1.35rem 1.4rem 1.4rem;
+    cursor: pointer;
+    transition: all 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+    position: relative; overflow: hidden;
+    display: flex; flex-direction: column; min-height: 220px;
+  }
+  .module-card::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+    background: linear-gradient(90deg, transparent, var(--gold-line), transparent);
+    opacity: 0; transition: opacity 0.3s;
+  }
+  .module-card:hover {
+    border-color: var(--gold-line);
+    transform: translateY(-2px);
+    box-shadow: 0 20px 40px -20px rgba(0,0,0,0.6);
+  }
+  .module-card:hover::before { opacity: 1; }
+  .module-card.done {
+    border-color: rgba(139,173,94,0.28);
+    background:
+      linear-gradient(180deg, rgba(139,173,94,0.05), transparent 50%),
+      var(--paper);
+  }
+  .module-card.locked { opacity: 0.55; cursor: not-allowed; pointer-events: none; }
+  .module-card.locked:hover { transform: none; border-color: var(--line); }
+
+  .module-topline {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 0.85rem;
+  }
+  .module-bereich {
+    font-family: var(--mono); font-size: 0.62rem; font-weight: 500;
+    color: var(--muted); letter-spacing: 0.18em; text-transform: uppercase;
+  }
+  .module-badge {
+    background: var(--green-soft); color: var(--green);
+    font-family: var(--mono); font-size: 0.62rem; font-weight: 500;
+    padding: 3px 8px; border-radius: 3px;
+    border: 1px solid rgba(139,173,94,0.3);
+    letter-spacing: 0.08em; text-transform: uppercase;
+    display: inline-flex; align-items: center; gap: 4px;
+  }
+  .module-lock-badge {
+    background: var(--ink-2); color: var(--muted);
+    font-family: var(--mono); font-size: 0.62rem; font-weight: 500;
+    padding: 3px 8px; border-radius: 3px;
+    border: 1px solid var(--line);
+    letter-spacing: 0.08em; text-transform: uppercase;
+  }
+  .module-title {
+    font-family: var(--serif); font-size: 1.15rem;
+    color: var(--text); margin-bottom: 0.55rem;
+    line-height: 1.3; letter-spacing: -0.005em;
+  }
+  .module-desc {
+    font-size: 0.85rem; color: var(--text-2);
+    line-height: 1.55; flex: 1;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  }
+  .module-lock-info {
+    font-size: 0.78rem; color: var(--muted);
+    margin-top: 0.75rem; padding-top: 0.75rem;
+    border-top: 1px dashed var(--line);
+    display: flex; align-items: center; gap: 0.5rem;
+  }
+  .module-lock-info strong { color: var(--text-2); font-weight: 500; }
+  .pflicht-tag {
+    display: inline-flex; align-items: center; gap: 4px;
+    font-family: var(--mono); font-size: 0.6rem; font-weight: 500;
+    text-transform: uppercase; letter-spacing: 0.14em;
+    color: var(--gold); border: 1px solid var(--gold-line);
+    padding: 3px 7px; border-radius: 3px;
+    margin-top: 0.85rem; align-self: flex-start;
+  }
+  .pflicht-tag::before { content: '★'; font-size: 0.7rem; }
+
+  .module-progress-wrap { margin-top: 1.1rem; }
+  .module-progress-row {
+    display: flex; align-items: center; justify-content: space-between;
+    font-family: var(--mono); font-size: 0.66rem;
+    color: var(--muted); letter-spacing: 0.1em;
+    margin-bottom: 0.45rem; text-transform: uppercase;
+  }
+  .module-progress-row .pct { color: var(--gold); font-weight: 500; font-size: 0.72rem; }
+  .module-card.done .module-progress-row .pct { color: var(--green); }
+  .module-progress {
+    height: 3px; background: var(--line); border-radius: 2px; overflow: hidden;
+    position: relative;
+  }
+  .module-progress-bar {
+    height: 100%; border-radius: 2px;
+    background: linear-gradient(90deg, var(--gold-deep), var(--gold));
+    transition: width 0.6s cubic-bezier(0.2, 0.8, 0.2, 1);
+    position: relative;
+  }
+  .module-card.done .module-progress-bar {
+    background: linear-gradient(90deg, var(--green), #a4c77b);
+  }
+
+  /* ========== BEREICHSTEST CARD ========== */
+  #bereichstest-section { margin-top: 2.5rem; }
+  .bereichstest-card {
+    background:
+      linear-gradient(135deg, rgba(201,169,106,0.1), transparent 60%),
+      var(--paper);
+    border: 1px solid var(--gold-line);
+    border-radius: 10px;
+    padding: 1.75rem 1.85rem;
+    margin-bottom: 1rem;
+    position: relative; overflow: hidden;
+  }
+  .bereichstest-card::after {
+    content: '§'; position: absolute; right: 1.5rem; top: 50%;
+    transform: translateY(-50%); font-family: var(--serif); font-style: italic;
+    font-size: 6rem; color: var(--gold); opacity: 0.07;
+    pointer-events: none;
+  }
+  .bereichstest-card.locked { opacity: 0.6; }
+  .bereichstest-card.passed {
+    border-color: rgba(139,173,94,0.4);
+    background:
+      linear-gradient(135deg, rgba(139,173,94,0.1), transparent 60%),
+      var(--paper);
+  }
+  .bereichstest-card .bt-label {
+    font-family: var(--mono); font-size: 0.66rem; font-weight: 500;
+    text-transform: uppercase; letter-spacing: 0.2em;
+    color: var(--gold); margin-bottom: 0.6rem;
+    display: inline-flex; align-items: center; gap: 0.5rem;
+  }
+  .bereichstest-card.passed .bt-label { color: var(--green); }
+  .bereichstest-card .bt-title {
+    font-family: var(--serif); font-size: 1.35rem;
+    color: var(--text); margin-bottom: 0.4rem;
+    letter-spacing: -0.005em;
+  }
+  .bereichstest-card .bt-title em { font-style: italic; color: var(--gold); }
+  .bereichstest-card .bt-desc {
+    font-size: 0.88rem; color: var(--text-2);
+    margin-bottom: 1.2rem; max-width: 560px; line-height: 1.55;
+  }
+  .bereichstest-card .bt-action {
+    background: var(--gold); color: var(--ink);
+    border: none; padding: 11px 26px; border-radius: 4px;
+    font-family: var(--sans); font-size: 0.82rem; font-weight: 600;
+    letter-spacing: 0.06em; text-transform: uppercase;
+    cursor: pointer; transition: all 0.2s;
+  }
+  .bereichstest-card .bt-action:hover { background: #d8b87a; box-shadow: 0 8px 20px -8px rgba(201,169,106,0.5); }
+  .bereichstest-card .bt-action:disabled { opacity: 0.4; cursor: not-allowed; background: var(--line); color: var(--muted); }
+  .bereichstest-card .bt-action.cert { background: var(--green); color: var(--ink); }
+  .bereichstest-card .bt-action.cert:hover { background: #9dbb6f; }
+
+  /* ========== BACK BUTTON ========== */
+  .back-btn {
+    background: none; border: none; color: var(--gold);
+    cursor: pointer; font-family: var(--mono); font-size: 0.72rem;
+    letter-spacing: 0.14em; text-transform: uppercase;
+    padding: 0; margin-bottom: 1.75rem;
+    display: inline-flex; align-items: center; gap: 8px;
+    transition: color 0.2s;
+  }
+  .back-btn:hover { color: var(--text); }
+  .back-btn::before { content: '←'; font-size: 1rem; letter-spacing: 0; }
+
+  /* ========== MODULE VIEW ========== */
+  .mv-header {
+    padding-bottom: 2rem;
+    border-bottom: 1px solid var(--line);
+    margin-bottom: 2rem;
+  }
+  .module-view-bereich-tag {
+    font-family: var(--mono); font-size: 0.66rem;
+    color: var(--gold); letter-spacing: 0.2em;
+    text-transform: uppercase; margin-bottom: 0.8rem;
+    display: inline-flex; align-items: center; gap: 0.5rem;
+  }
+  .module-view-bereich-tag::before {
+    content: ''; width: 18px; height: 1px; background: var(--gold);
+  }
+  .module-view-title {
+    font-family: var(--serif); font-size: 2rem;
+    color: var(--text); margin-bottom: 0.5rem;
+    line-height: 1.15; letter-spacing: -0.01em;
+  }
+  .module-view-meta {
+    font-size: 0.92rem; color: var(--text-2);
+    max-width: 640px; line-height: 1.55;
+  }
+
+  /* ========== CHAPTER LIST ========== */
+  .chapter-list {
+    display: flex; flex-direction: column; gap: 0.5rem;
+    margin-bottom: 2rem;
+  }
+  .chapter-item {
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 0.9rem 1.25rem;
+    display: flex; align-items: center; gap: 1rem;
+    transition: all 0.2s;
+  }
+  .chapter-item.clickable { cursor: pointer; }
+  .chapter-item.clickable:hover { border-color: var(--gold-line); background: var(--paper-2); }
+  .chapter-item.active-ch {
+    border-color: var(--gold);
+    background: var(--gold-light);
+    box-shadow: 0 0 0 3px rgba(201,169,106,0.08);
+  }
+  .chapter-item.done-ch { border-color: rgba(139,173,94,0.3); }
+  .chapter-item.locked-ch { opacity: 0.45; cursor: not-allowed; }
+  .ch-icon {
+    width: 32px; height: 32px; border-radius: 50%;
+    border: 1px solid var(--line);
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--mono); font-size: 0.75rem;
+    color: var(--muted); flex-shrink: 0; font-weight: 500;
+    background: var(--ink-2);
+  }
+  .chapter-item.active-ch .ch-icon { border-color: var(--gold); color: var(--gold); background: var(--paper); }
+  .ch-icon.done-icon {
+    background: var(--green-soft); border-color: var(--green); color: var(--green);
+  }
+  .ch-body { flex: 1; min-width: 0; }
+  .ch-title { font-size: 0.9rem; font-weight: 500; color: var(--text); }
+  .ch-sub {
+    font-family: var(--mono); font-size: 0.66rem;
+    color: var(--muted); letter-spacing: 0.1em; text-transform: uppercase;
+    margin-top: 2px;
+  }
+
+  /* ========== CHAPTER CONTENT ========== */
+  .chapter-content {
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 2.25rem 2.5rem;
+    margin-top: 0.5rem;
+    position: relative;
+  }
+  .chapter-content h1, .chapter-content h2, .chapter-content h3 {
+    font-family: var(--serif); color: var(--text);
+    margin: 1.75rem 0 0.75rem; letter-spacing: -0.01em;
+  }
+  .chapter-content h1 { font-size: 1.65rem; }
+  .chapter-content h2 { font-size: 1.3rem; }
+  .chapter-content h3 { font-size: 1.1rem; color: var(--gold); }
+  .chapter-content p {
+    font-size: 0.95rem; line-height: 1.75;
+    color: var(--text); margin-bottom: 1rem;
+    text-wrap: pretty;
+  }
+  .chapter-content ul, .chapter-content ol { padding-left: 1.5rem; margin-bottom: 1rem; }
+  .chapter-content li { font-size: 0.95rem; line-height: 1.75; color: var(--text); margin-bottom: 0.35rem; }
+  .chapter-content img { max-width: 100%; border-radius: 6px; margin: 1.25rem 0; display: block; border: 1px solid var(--line); }
+  .chapter-content iframe { max-width: 100%; border-radius: 6px; border: none; margin: 1.25rem 0; }
+  .chapter-content video { max-width: 100%; border-radius: 6px; margin: 1.25rem 0; }
+  .chapter-content strong { color: var(--gold); font-weight: 600; }
+  .chapter-content table { width: 100%; border-collapse: collapse; margin: 1.25rem 0; font-size: 0.88rem; }
+  .chapter-content th, .chapter-content td {
+    padding: 0.65rem 0.85rem; border-bottom: 1px solid var(--line); text-align: left;
+  }
+  .chapter-content th {
+    color: var(--gold); font-weight: 600; font-family: var(--mono);
+    font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.1em;
+  }
+  .chapter-video { width: 100%; aspect-ratio: 16/9; border-radius: 8px; background: var(--ink); border: 1px solid var(--line) !important; }
+  .media-block { margin: 1.25rem 0; }
+  .media-block + .media-block { margin-top: 1.75rem; }
+
+  /* ========== CHAPTER NAV ========== */
+  .chapter-nav {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-top: 1.75rem; gap: 1rem; flex-wrap: wrap;
+  }
+  .btn-sec {
+    background: transparent;
+    border: 1px solid var(--line); color: var(--text-2);
+    padding: 10px 18px; border-radius: 4px; cursor: pointer;
+    font-family: var(--sans); font-size: 0.82rem; font-weight: 500;
+    transition: all 0.2s;
+    display: inline-flex; align-items: center; gap: 0.5rem;
+    max-width: 280px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .btn-sec:hover:not(:disabled) { border-color: var(--gold); color: var(--gold); background: var(--gold-light); }
+  .btn-complete {
+    background: var(--gold); color: var(--ink);
+    border: none; padding: 11px 22px; border-radius: 4px;
+    cursor: pointer; font-family: var(--sans); font-size: 0.82rem;
+    font-weight: 600; letter-spacing: 0.04em;
+    transition: all 0.2s;
+    display: inline-flex; align-items: center; gap: 0.5rem;
+  }
+  .btn-complete:hover { background: #d8b87a; box-shadow: 0 8px 20px -8px rgba(201,169,106,0.5); }
+
+  /* ========== QUIZ ========== */
+  .quiz-wrap {
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 2.25rem 2.5rem;
+  }
+  .quiz-kicker {
+    font-family: var(--mono); font-size: 0.66rem;
+    color: var(--gold); letter-spacing: 0.22em;
+    text-transform: uppercase; margin-bottom: 0.6rem;
+  }
+  .quiz-title {
+    font-family: var(--serif); color: var(--text);
+    font-size: 1.5rem; margin-bottom: 0.4rem;
+    letter-spacing: -0.005em;
+  }
+  .quiz-sub {
+    font-family: var(--mono); font-size: 0.75rem;
+    color: var(--muted); margin-bottom: 2.25rem;
+    letter-spacing: 0.08em;
+    padding-bottom: 1.25rem; border-bottom: 1px solid var(--line);
+  }
+  .quiz-question { margin-bottom: 2.25rem; }
+  .quiz-question p {
+    font-family: var(--serif); font-size: 1.05rem;
+    font-weight: 400; color: var(--text);
+    margin-bottom: 1rem; line-height: 1.4;
+  }
+  .quiz-question p::before {
+    content: attr(data-qnum);
+    font-family: var(--mono); font-size: 0.7rem;
+    color: var(--gold); letter-spacing: 0.1em;
+    display: block; margin-bottom: 0.3rem;
+    font-weight: 500;
+  }
+  .quiz-option {
+    display: flex; align-items: center; gap: 0.85rem;
+    background: var(--ink-2);
+    border: 1px solid var(--line);
+    border-radius: 5px;
+    padding: 0.85rem 1.1rem; margin-bottom: 0.5rem;
+    cursor: pointer; font-size: 0.9rem;
+    transition: all 0.15s;
+    color: var(--text-2);
+  }
+  .quiz-option > span:first-child {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 26px; height: 26px; border-radius: 50%;
+    border: 1px solid var(--line);
+    font-family: var(--mono); font-size: 0.72rem;
+    font-weight: 500; color: var(--muted);
+    flex-shrink: 0;
+  }
+  .quiz-option:hover { border-color: var(--gold-line); color: var(--text); }
+  .quiz-option:hover > span:first-child { border-color: var(--gold); color: var(--gold); }
+  .quiz-option.selected { border-color: var(--gold); background: var(--gold-light); color: var(--text); }
+  .quiz-option.selected > span:first-child { background: var(--gold); color: var(--ink); border-color: var(--gold); }
+  .quiz-option.correct { border-color: var(--green); background: var(--green-soft); color: var(--text); }
+  .quiz-option.correct > span:first-child { background: var(--green); color: var(--ink); border-color: var(--green); }
+  .quiz-option.wrong { border-color: var(--red); background: rgba(201,90,74,0.1); color: var(--text); }
+  .quiz-option.wrong > span:first-child { background: var(--red); color: var(--ink); border-color: var(--red); }
+
+  .quiz-result {
+    text-align: center; padding: 2.5rem 0 0.5rem;
+    border-top: 1px solid var(--line); margin-top: 1.5rem;
+  }
+  .quiz-score {
+    font-family: var(--serif);
+    font-size: 4rem; line-height: 1;
+    color: var(--gold); letter-spacing: -0.02em;
+  }
+  .quiz-score em { font-style: italic; }
+  .quiz-passed {
+    color: var(--green); font-size: 0.95rem; margin-top: 0.75rem;
+    font-family: var(--mono); letter-spacing: 0.1em; text-transform: uppercase;
+  }
+  .quiz-failed {
+    color: var(--red); font-size: 0.9rem; margin-top: 0.75rem;
+    font-family: var(--mono); letter-spacing: 0.1em; text-transform: uppercase;
+  }
+
+  /* ========== TOAST ========== */
+  .toast {
+    position: fixed; bottom: 1.75rem; right: 1.75rem;
+    background: var(--paper);
+    border: 1px solid var(--gold);
+    color: var(--text);
+    padding: 0.85rem 1.3rem;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    transform: translateY(80px); opacity: 0;
+    transition: all 0.3s;
+    z-index: 999;
+    box-shadow: 0 20px 40px -10px rgba(0,0,0,0.5);
+    max-width: 360px;
+  }
+  .toast.show { transform: translateY(0); opacity: 1; }
+
+  /* ========== SPINNER ========== */
+  .spinner {
+    display: inline-block; width: 22px; height: 22px;
+    border: 2px solid var(--line); border-top-color: var(--gold);
+    border-radius: 50%; animation: spin 0.7s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading-center { display: flex; justify-content: center; padding: 3rem; grid-column: 1 / -1; }
+
+  /* ========== EMPTY STATE ========== */
+  .empty-state {
+    background: var(--paper); border: 1px dashed var(--line); border-radius: 8px;
+    padding: 2.5rem; text-align: center;
+    color: var(--muted); font-size: 0.88rem;
+  }
+
+  /* ========== CONFETTI OVERLAY ========== */
+  #confetti-overlay {
+    position: fixed; inset: 0; z-index: 1000;
+    display: none; align-items: center; justify-content: center;
+    background: rgba(11,10,8,0.92); padding: 1rem;
+    backdrop-filter: blur(6px);
+  }
+  #confetti-overlay.show { display: flex; }
+  #confetti-canvas { position: absolute; inset: 0; pointer-events: none; }
+  .gz-card {
+    background: var(--paper);
+    border: 1px solid var(--gold);
+    border-radius: 12px;
+    padding: 3rem 2.5rem 2.5rem;
+    text-align: center;
+    max-width: 480px;
+    position: relative; z-index: 1;
+    box-shadow: 0 0 80px -10px rgba(201,169,106,0.35), 0 0 0 1px rgba(201,169,106,0.1);
+  }
+  .gz-card::before {
+    content: ''; position: absolute; inset: 8px;
+    border: 1px solid var(--gold-line); border-radius: 8px; pointer-events: none; opacity: 0.5;
+  }
+  .gz-crest {
+    width: 72px; height: 72px; margin: 0 auto 1.25rem;
+    border: 1px solid var(--gold); border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    background: radial-gradient(circle at 35% 30%, rgba(255,220,170,0.3), transparent 60%);
+    position: relative;
+  }
+  .gz-crest::after {
+    content: '★'; font-size: 2.2rem; color: var(--gold);
+    text-shadow: 0 0 20px rgba(201,169,106,0.6);
+  }
+  .gz-kicker {
+    font-family: var(--mono); font-size: 0.66rem;
+    color: var(--gold); letter-spacing: 0.28em;
+    text-transform: uppercase; margin-bottom: 0.6rem;
+  }
+  .gz-title {
+    font-family: var(--serif); color: var(--text);
+    font-size: 1.9rem; margin-bottom: 0.8rem;
+    letter-spacing: -0.01em;
+  }
+  .gz-title em { font-style: italic; color: var(--gold); }
+  .gz-text {
+    color: var(--text-2); font-size: 0.95rem;
+    line-height: 1.65; margin-bottom: 1.75rem;
+  }
+  .gz-bereich { color: var(--gold); font-weight: 500; font-style: italic; font-family: var(--serif); }
+  .gz-actions { display: flex; flex-direction: column; gap: 0.6rem; }
+  .gz-btn {
+    padding: 12px 22px; border-radius: 4px;
+    font-family: var(--sans); font-size: 0.82rem; font-weight: 600;
+    letter-spacing: 0.06em; text-transform: uppercase;
+    cursor: pointer; border: none;
+    transition: all 0.2s;
+  }
+  .gz-btn.primary { background: var(--gold); color: var(--ink); }
+  .gz-btn.primary:hover { background: #d8b87a; box-shadow: 0 8px 20px -8px rgba(201,169,106,0.5); }
+  .gz-btn.secondary {
+    background: transparent; color: var(--text-2);
+    border: 1px solid var(--line);
+  }
+  .gz-btn.secondary:hover { border-color: var(--gold-line); color: var(--text); }
+
+  /* ========== RESPONSIVE ========== */
+  @media (max-width: 640px) {
+    nav { padding: 0.8rem 1rem; }
+    #nav-name { border-left: none; padding-left: 0; }
+    .page-wrap { padding: 1.75rem 1.15rem 4rem; }
+    .welcome-head { font-size: 1.75rem; }
+    .module-view-title { font-size: 1.55rem; }
+    .chapter-content { padding: 1.5rem 1.3rem; }
+    .quiz-wrap { padding: 1.75rem 1.3rem; }
+    .login-box { padding: 2.25rem 1.5rem 1.75rem; }
+    .stat { border-right: none; border-bottom: 1px solid var(--line-soft); }
+    .stat:last-child { border-bottom: none; }
+    .chapter-nav .btn-sec { max-width: 100%; }
+  }
+</style>
+</head>
+<body>
+
+<div id="login-screen">
+  <div class="login-box">
+    <div class="login-crest"></div>
+    <div class="login-logo">Woinemer <em>Onboarding</em></div>
+    <div class="login-sub">Braumanufaktur Brennerei Restaurant</div>
+    <label>Benutzername</label>
+    <input type="text" id="login-user" placeholder="dein.name" autocomplete="username">
+    <label>Passwort</label>
+    <input type="password" id="login-pass" placeholder="••••••••" autocomplete="current-password">
+    <button class="btn-primary" id="btn-login" onclick="doLogin()">
+      <span class="btn-spinner"></span>
+      <span class="btn-label">Anmelden</span>
+    </button>
+    <div class="login-error" id="login-err"></div>
+    <div class="login-foot">Woinemer Hausbrauerei 2026</div>
+  </div>
+</div>
+
+<nav id="main-nav" style="display:none;">
+  <div class="nav-brand">
+    <div>
+      Woinemer Academy
+      <small>Lernwerkstatt</small>
+    </div>
+  </div>
+  <div class="nav-user">
+    <a href="https://script.google.com/macros/s/AKfycbzDA85cieZvNmZZcY8DN3gD4CKZZ8dSenoXKnNobEZfm-S2iwD3QlO4xk44AIu9XXjq/exec" target="_blank" class="btn-rezept">📖 Rezeptkartei</a>
+    <span id="cert-buttons"></span>
+    <span id="nav-name"></span>
+    <button class="btn-logout" onclick="logout()">Abmelden</button>
+  </div>
+</nav>
+
+<div id="home-screen" class="screen">
+  <div class="page-wrap">
+    <div class="welcome-kicker">Willkommen zurück</div>
+    <div class="welcome-head">Hallo, <em id="welcome-name"></em> 👋</div>
+    <p class="welcome-sub">Deine persönliche Lernwerkstatt. Schließe Module ab, meistere Abschlusstests und hol dir dein Zertifikat.</p>
+
+    <div class="stats-strip" id="stats-strip" style="display:none;">
+      <div class="stat">
+        <div class="stat-label">Fortschritt</div>
+        <div class="stat-value"><em id="stat-pct">0</em><span class="unit">%</span></div>
+        <div class="stat-bar"><div class="stat-bar-fill" id="stat-pct-bar" style="width:0%"></div></div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">Module</div>
+        <div class="stat-value"><span id="stat-mods-done">0</span><span class="unit" id="stat-mods-total">/ 0</span></div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">Kapitel</div>
+        <div class="stat-value"><span id="stat-chaps">0</span></div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">Zertifikate</div>
+        <div class="stat-value"><em id="stat-certs">0</em></div>
+      </div>
+    </div>
+
+    <div class="section-label">Neuigkeiten <span class="count" id="news-count"></span></div>
+    <div class="news-grid" id="news-grid"><div class="loading-center"><div class="spinner"></div></div></div>
+
+    <div class="section-label">Deine Module <span class="count" id="mod-count"></span></div>
+    <div class="module-grid" id="module-grid"><div class="loading-center"><div class="spinner"></div></div></div>
+
+    <div id="bereichstest-section"></div>
+  </div>
+</div>
+
+<div id="module-screen" class="screen">
+  <div class="page-wrap">
+    <button class="back-btn" onclick="showHome()">Zurück zur Übersicht</button>
+    <div class="mv-header">
+      <div class="module-view-bereich-tag" id="mv-bereich"></div>
+      <div class="module-view-title" id="mv-title"></div>
+      <div class="module-view-meta" id="mv-desc"></div>
+    </div>
+    <div class="section-label">Kapitel</div>
+    <div class="chapter-list" id="chapter-list"></div>
+    <div id="chapter-content-wrap"></div>
+  </div>
+</div>
+
+<div id="quiz-screen" class="screen">
+  <div class="page-wrap">
+    <button class="back-btn" id="quiz-back-btn">Zurück</button>
+    <div class="quiz-wrap" id="quiz-wrap"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- KONFETTI + GLUECKWUNSCH -->
+<div id="confetti-overlay">
+  <canvas id="confetti-canvas"></canvas>
+  <div class="gz-card">
+    <div class="gz-crest"></div>
+    <div class="gz-kicker">Ausgezeichnet</div>
+    <div class="gz-title">Herzlichen <em>Glückwunsch</em></div>
+    <div class="gz-text">
+      Du hast erfolgreich alle Module und den Abschlusstest für den Bereich
+      <span class="gz-bereich" id="gz-bereich"></span> bestanden. Dein Zertifikat steht zum Download bereit.
+    </div>
+    <div class="gz-actions">
+      <button class="gz-btn primary" id="gz-download">📜 Zertifikat herunterladen</button>
+      <button class="gz-btn secondary" onclick="closeConfetti()">Später</button>
+    </div>
+  </div>
+</div>
+
+<script src="./config.js"></script>
+<script>
+var API = (function() {
+  var templateApi = '<?= ScriptApp.getService().getUrl() ?>';
+  if (templateApi && templateApi.indexOf('<?') === -1 && templateApi.indexOf('ScriptApp') === -1) {
+    return templateApi;
+  }
+
+  var params = new URLSearchParams(window.location.search);
+  var queryApi = params.get('api');
+  if (queryApi) {
+    try { localStorage.setItem('woinemer_academy_api', queryApi); } catch(e) {}
+    return queryApi;
+  }
+
+  if (window.WOINEMER_ACADEMY_API) return window.WOINEMER_ACADEMY_API;
+  try {
+    var storedApi = localStorage.getItem('woinemer_academy_api');
+    if (storedApi) return storedApi;
+  } catch(e) {}
+
+  return '';
+})();
+var session = null;
+var currentModule = null;
+var currentChapters = [];
+var currentQuiz = [];
+var currentFinalQuiz = null;
+var userProgress = { progress: [], quizResults: [] };
+var modulesCache = [];
+var bereichStatusCache = [];
+var isAdminUser = false;
+var certificateCache = [];
+
+function setButtonLoading(btn, label) {
+  if (!btn) return function(){};
+  var oldHtml = btn.innerHTML;
+  var oldText = btn.textContent;
+  var oldDisabled = btn.disabled;
+  btn.disabled = true;
+  btn.classList.add('loading');
+  if (label) {
+    var labelEl = btn.querySelector('.btn-label');
+    if (labelEl) labelEl.textContent = label;
+    else btn.innerHTML = label;
+  }
+  return function() {
+    btn.disabled = oldDisabled;
+    btn.classList.remove('loading');
+    if (label) {
+      var labelEl = btn.querySelector('.btn-label');
+      if (labelEl) labelEl.textContent = oldText.trim() || oldHtml;
+      else btn.innerHTML = oldHtml;
+    }
+  };
+}
+
+function initialDataCacheKey() {
+  if (!session || !session.user) return '';
+  return 'woinemer_academy_initial_' + (session.user.user_id || session.user.name || 'user');
+}
+
+function readInitialDataCache() {
+  var key = initialDataCacheKey();
+  if (!key) return null;
+  try {
+    var cached = JSON.parse(localStorage.getItem(key) || 'null');
+    if (!cached || !cached.data || (Date.now() - cached.ts) > 10 * 60 * 1000) return null;
+    return cached.data;
+  } catch(e) {
+    return null;
+  }
+}
+
+function writeInitialDataCache(res) {
+  var key = initialDataCacheKey();
+  if (!key || !res || !res.ok) return;
+  try { localStorage.setItem(key, JSON.stringify({ ts: Date.now(), data: res })); } catch(e) {}
+}
+
+function applyInitialData(res, options) {
+  options = options || {};
+  isAdminUser        = res.isAdmin === true;
+  modulesCache       = res.modules || [];
+  bereichStatusCache = res.bereichStatus || [];
+  userProgress       = { progress: res.progress || [], quizResults: res.quizResults || [] };
+  lastNews           = res.news || [];
+
+  renderStats();
+  renderNews(lastNews);
+  renderModuleGrid();
+  renderBereichstestSection();
+  refreshCertificateButtons({ silent: options.fromCache === true });
+}
+
+// ================= LOGIN =================
+function doLogin() {
+  var btn = document.getElementById('btn-login');
+  if (btn.classList.contains('loading')) return;
+  var u = document.getElementById('login-user').value.trim();
+  var p = document.getElementById('login-pass').value;
+  var err = document.getElementById('login-err');
+  err.style.display = 'none';
+  if (!u || !p) {
+    err.textContent = 'Bitte Benutzername und Passwort eingeben';
+    err.style.display = 'block';
+    return;
+  }
+  btn.classList.add('loading');
+  btn.disabled = true;
+  btn.querySelector('.btn-label').textContent = 'Anmelden ...';
+  api({ action: 'login', username: u, password: p }, function(res) {
+    btn.classList.remove('loading');
+    btn.disabled = false;
+    btn.querySelector('.btn-label').textContent = 'Anmelden';
+    if (res.ok) { session = res; loadApp(); }
+    else { err.textContent = res.error || 'Anmeldung fehlgeschlagen'; err.style.display = 'block'; }
+  });
+}
+['login-user', 'login-pass'].forEach(function(id) {
+  document.getElementById(id).addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') doLogin();
+  });
+});
+
+function logout() {
+  session = null;
+  isAdminUser = false;
+  certificateCache = [];
+  document.getElementById('main-nav').style.display = 'none';
+  document.getElementById('login-screen').style.display = 'flex';
+  hideAllScreens();
+}
+
+function loadApp() {
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('main-nav').style.display = 'flex';
+  document.getElementById('nav-name').textContent = session.user.name;
+  document.getElementById('welcome-name').textContent = session.user.name.split(' ')[0];
+  isAdminUser = (session.user.role || '') === 'admin';
+  showHome();
+}
+
+// ================= HELPER =================
+function isChapterDone(chapterId) {
+  if (!chapterId) return false;
+  var target = chapterId.toString();
+  return userProgress.progress.some(function(p) {
+    return p && p.chapter_id && p.chapter_id.toString() === target;
+  });
+}
+function isPassed(val) {
+  return val === true || val === 'TRUE' || val === 'true';
+}
+function isRequired(val) {
+  if (val === undefined || val === null || val === '') return true;
+  return isPassed(val);
+}
+function isModulePassed(moduleId) {
+  if (!moduleId) return false;
+  var target = moduleId.toString();
+  return userProgress.quizResults.some(function(q) {
+    return q && q.module_id && q.module_id.toString() === target && isPassed(q.passed);
+  });
+}
+function isChapterUnlocked(idx) {
+  if (isAdminUser) return true;
+  if (idx === 0) return true;
+  return isChapterDone(currentChapters[idx - 1].chapter_id);
+}
+function allChaptersDone() {
+  if (isAdminUser) return true;
+  return currentChapters
+    .filter(function(c) { return isRequired(c.pflicht); })
+    .every(function(c) { return isChapterDone(c.chapter_id); });
+}
+
+function hideAllScreens() {
+  ['home-screen','module-screen','quiz-screen'].forEach(function(id) {
+    document.getElementById(id).classList.remove('active');
+  });
+}
+
+// ================= HOME =================
+function showHome() {
+  hideAllScreens();
+  document.getElementById('home-screen').classList.add('active');
+  loadInitialData();
+}
+
+function loadInitialData() {
+  var modGrid  = document.getElementById('module-grid');
+  var newsGrid = document.getElementById('news-grid');
+  var cached = readInitialDataCache();
+  if (cached) {
+    applyInitialData(cached, { fromCache: true });
+  } else {
+    modGrid.innerHTML  = '<div class="loading-center"><div class="spinner"></div></div>';
+    newsGrid.innerHTML = '<div class="loading-center"><div class="spinner"></div></div>';
+  }
+
+  api({ action: 'getInitialData', token: session.token }, function(res) {
+    if (!res.ok) {
+      if (!cached) modGrid.innerHTML = '<p class="empty-state">Fehler beim Laden.</p>';
+      else toast('Aktualisierung fehlgeschlagen');
+      return;
+    }
+    writeInitialDataCache(res);
+    applyInitialData(res);
+  });
+}
+
+function renderStats() {
+  var strip = document.getElementById('stats-strip');
+  if (!modulesCache.length && !bereichStatusCache.length) { strip.style.display = 'none'; return; }
+  strip.style.display = 'grid';
+
+  var totalMods = modulesCache.length;
+  var doneMods  = modulesCache.filter(function(m) { return m.passed === true; }).length;
+  var totalChaps = 0, doneChaps = 0;
+  modulesCache.forEach(function(m) {
+    totalChaps += (m.total_chapters || 0);
+    doneChaps  += (m.done_chapters  || 0);
+  });
+  var totalUnits = totalMods + totalChaps;
+  var doneUnits  = doneMods + doneChaps;
+  var pct = totalUnits ? Math.round(doneUnits / totalUnits * 100) : 0;
+  var certsEarned = bereichStatusCache.filter(function(b) { return b.final_passed; }).length;
+
+  document.getElementById('stat-pct').textContent = pct;
+  document.getElementById('stat-pct-bar').style.width = pct + '%';
+  document.getElementById('stat-mods-done').textContent = doneMods;
+  document.getElementById('stat-mods-total').textContent = ' / ' + totalMods;
+  document.getElementById('stat-chaps').textContent = doneChaps;
+  document.getElementById('stat-certs').textContent = certsEarned;
+}
+
+function renderNews(newsArr) {
+  var grid = document.getElementById('news-grid');
+  var count = document.getElementById('news-count');
+  grid.innerHTML = '';
+  if (!newsArr.length) {
+    count.textContent = '';
+    grid.innerHTML = '<div class="empty-state">Momentan keine Neuigkeiten.</div>';
+    return;
+  }
+  count.textContent = '(' + newsArr.length + ')';
+  newsArr.forEach(function(n) {
+    var isAllg = n.bereich === 'Allgemein';
+    var date = n.updated_at ? new Date(n.updated_at).toLocaleDateString('de-DE', { day:'2-digit', month:'2-digit', year:'numeric' }) : '';
+    var card = document.createElement('div');
+    card.className = 'news-card ' + (isAllg ? 'allgemein' : 'bereich');
+    card.innerHTML =
+      '<div class="news-head-row">' +
+        '<div class="news-bereich-tag">' + esc(n.bereich) + '</div>' +
+        (date ? '<div class="news-date">' + date + '</div>' : '') +
+      '</div>' +
+      '<div class="news-title">' + esc(n.title) + '</div>' +
+      '<div class="news-content">' + esc(n.content) + '</div>';
+    grid.appendChild(card);
+  });
+}
+
+// Grouped by Bereich
+function renderModuleGrid() {
+  var grid = document.getElementById('module-grid');
+  var countEl = document.getElementById('mod-count');
+  grid.innerHTML = '';
+  if (!modulesCache.length) {
+    countEl.textContent = '';
+    grid.innerHTML = '<div class="empty-state">Dir sind noch keine Module zugewiesen.</div>';
+    return;
+  }
+  countEl.textContent = '(' + modulesCache.length + ')';
+
+  var sorted = modulesCache.slice().sort(function(a, b) {
+    var aDone = a.passed ? 1 : 0;
+    var bDone = b.passed ? 1 : 0;
+    if (aDone !== bDone) return aDone - bDone;
+    return (a.order_index || 0) - (b.order_index || 0);
+  });
+
+  // group by bereich
+  var groups = {};
+  var groupOrder = [];
+  sorted.forEach(function(m) {
+    var b = (m.bereich || 'Sonstige').toString();
+    if (!groups[b]) { groups[b] = []; groupOrder.push(b); }
+    groups[b].push(m);
+  });
+
+  var groupIdx = 0;
+  groupOrder.forEach(function(bereich) {
+    var mods = groups[bereich];
+    var totalInB = mods.length;
+    var doneInB = mods.filter(function(m) { return m.passed; }).length;
+    var pct = totalInB ? Math.round(doneInB / totalInB * 100) : 0;
+    groupIdx++;
+
+    var groupWrap = document.createElement('div');
+    groupWrap.className = 'bereich-group';
+
+    var head = document.createElement('div');
+    head.className = 'bereich-head';
+    head.innerHTML =
+      '<div class="bereich-title-wrap">' +
+        '<div class="bereich-num">' + String(groupIdx).padStart(2, '0') + '</div>' +
+        '<div class="bereich-title">' + esc(bereich) + '</div>' +
+      '</div>' +
+      '<div class="bereich-meta">' +
+        '<span>' + doneInB + ' von ' + totalInB + ' Module</span>' +
+        '<span class="dot"></span>' +
+        '<span class="' + (pct === 100 ? 'ok' : '') + '">' + pct + '% abgeschlossen</span>' +
+      '</div>';
+    groupWrap.appendChild(head);
+
+    var inner = document.createElement('div');
+    inner.className = 'module-grid-inner';
+
+    mods.forEach(function(m) {
+      var passed = m.passed === true;
+      var locked = m.locked === true && !isAdminUser;
+      var card = document.createElement('div');
+      card.className = 'module-card' + (passed ? ' done' : '') + (locked ? ' locked' : '');
+
+      var badge = passed
+        ? '<div class="module-badge">✓ Abgeschlossen</div>'
+        : (locked ? '<div class="module-lock-badge">🔒 Gesperrt</div>' : '<div class="module-bereich" style="text-align:right;">' + esc(m.bereich) + '</div>');
+
+      var lockInfo = locked
+        ? '<div class="module-lock-info">🔒 Zuerst abschließen: <strong>' + esc(m.required_title) + '</strong></div>'
+        : '';
+      var pflichtTag = (!locked && ((m.pflicht||'').toString()==='TRUE'||m.pflicht===true))
+        ? '<div class="pflicht-tag">Pflicht</div>'
+        : '';
+      var total = m.total_chapters || 0;
+      var done  = m.done_chapters || 0;
+      var mpct = total ? Math.round(done / total * 100) : 0;
+      var progressHtml = !locked
+        ? '<div class="module-progress-wrap">' +
+            '<div class="module-progress-row">' +
+              '<span>' + done + ' / ' + total + ' Kapitel</span>' +
+              '<span class="pct">' + mpct + '%</span>' +
+            '</div>' +
+            '<div class="module-progress"><div class="module-progress-bar" style="width:' + mpct + '%"></div></div>' +
+          '</div>'
+        : '';
+      card.innerHTML =
+        '<div class="module-topline">' +
+          '<div class="module-bereich">' + esc(m.bereich) + '</div>' +
+          (passed ? '<div class="module-badge">✓ Bestanden</div>' : (locked ? '<div class="module-lock-badge">Gesperrt</div>' : '')) +
+        '</div>' +
+        '<div class="module-title">' + esc(m.title) + '</div>' +
+        '<div class="module-desc">' + esc(m.description) + '</div>' +
+        pflichtTag + lockInfo + progressHtml;
+      if (!locked) card.onclick = (function(mod) { return function() { openModule(mod); }; })(m);
+      inner.appendChild(card);
+    });
+
+    groupWrap.appendChild(inner);
+    grid.appendChild(groupWrap);
+  });
+}
+
+function renderBereichstestSection() {
+  var sec = document.getElementById('bereichstest-section');
+  sec.innerHTML = '';
+  if (!bereichStatusCache.length) return;
+
+  var label = document.createElement('div');
+  label.className = 'section-label';
+  label.innerHTML = 'Abschlusstests & Zertifikate <span class="count">(' + bereichStatusCache.length + ')</span>';
+  sec.appendChild(label);
+
+  bereichStatusCache.forEach(function(bs) {
+    var card = document.createElement('div');
+    var classes = ['bereichstest-card'];
+    if (bs.final_passed) classes.push('passed');
+    if (!bs.final_unlocked) classes.push('locked');
+    card.className = classes.join(' ');
+
+    var labelText = bs.final_passed ? '✓ Bestanden' : (bs.final_unlocked ? '○ Bereit' : '🔒 Gesperrt');
+    var titleText = bs.bereich;
+    var descText;
+    if (bs.final_passed) {
+      descText = 'Du hast den Abschlusstest erfolgreich bestanden. Lade dir jetzt dein offizielles Zertifikat herunter.';
+    } else if (bs.final_unlocked) {
+      descText = isAdminUser
+        ? 'Admin-Zugriff: Du kannst den Test jederzeit starten.'
+        : 'Du hast alle Module im Bereich abgeschlossen. Bestehe den finalen Test (mind. 80%) und sichere dir dein Zertifikat.';
+    } else {
+      descText = 'Schließe zuerst alle ' + bs.total_modules + ' Module ab. Aktuell abgeschlossen: ' + bs.passed_modules + ' / ' + bs.total_modules + '.';
+    }
+
+    var btnHtml;
+    if (bs.final_passed) {
+      btnHtml = '<button class="bt-action cert" onclick="downloadCertificate(\'' + escAttr(bs.bereich) + '\', this)">📜 Zertifikat herunterladen</button>';
+    } else if (bs.final_unlocked) {
+      btnHtml = '<button class="bt-action" onclick="startFinalQuiz(\'' + escAttr(bs.bereich) + '\', this)">Test starten →</button>';
+    } else {
+      btnHtml = '<button class="bt-action" disabled>Test starten →</button>';
+    }
+
+    card.innerHTML =
+      '<div class="bt-label">' + esc(labelText) + '</div>' +
+      '<div class="bt-title">Abschlusstest <em>' + esc(titleText) + '</em></div>' +
+      '<div class="bt-desc">' + esc(descText) + '</div>' +
+      btnHtml;
+    sec.appendChild(card);
+  });
+}
+
+function refreshCertificateButtons(options) {
+  options = options || {};
+  var wrap = document.getElementById('cert-buttons');
+  wrap.innerHTML = '';
+  api({ action: 'getCertificateInfo', token: session.token }, function(res) {
+    if (!res.ok) {
+      if (!options.silent) toast('Zertifikate konnten nicht geladen werden');
+      return;
+    }
+    certificateCache = res.certificates || [];
+    certificateCache.forEach(function(c) {
+      if (!c.available) return;
+      var b = document.createElement('button');
+      b.className = 'btn-cert' + (c.isAdmin && !c.passed ? ' admin-only' : '');
+      b.title = c.isAdmin && !c.passed ? 'Admin-Vorschau (nicht offiziell bestanden)' : '';
+      b.innerHTML = '📜 ' + esc(c.bereich);
+      b.onclick = (function(bereich, btn){ return function() { downloadCertificate(bereich, btn); }; })(c.bereich, b);
+      wrap.appendChild(b);
+    });
+    renderStats();
+  });
+}
+
+function downloadCertificate(bereich, btn) {
+  var restore = setButtonLoading(btn, '⏳ Generiere ...');
+  api({ action: 'generateCertificate', token: session.token, bereich: bereich }, function(res) {
+    restore();
+    if (res.ok) {
+      window.open(res.url, '_blank');
+    } else {
+      toast('Fehler: ' + (res.error || 'Unbekannt'));
+    }
+  });
+}
+
+// ================= MODUL-VIEW =================
+function openModule(m) {
+  if (m.locked && !isAdminUser) return;
+  currentModule = m;
+  hideAllScreens();
+  document.getElementById('module-screen').classList.add('active');
+  window.scrollTo(0, 0);
+  document.getElementById('mv-bereich').textContent = m.bereich;
+  document.getElementById('mv-title').textContent = m.title;
+  document.getElementById('mv-desc').textContent = m.description;
+  document.getElementById('chapter-list').innerHTML = '<div class="loading-center"><div class="spinner"></div></div>';
+  document.getElementById('chapter-content-wrap').innerHTML = '';
+  api({ action: 'getChapters', token: session.token, module_id: m.module_id }, function(res) {
+    if (!res.ok) return;
+    currentChapters = res.chapters || [];
+    currentQuiz = res.quiz || [];
+    renderChapterList();
+    var firstOpen = isAdminUser ? 0 : currentChapters.findIndex(function(c) { return !isChapterDone(c.chapter_id); });
+    if (firstOpen === -1) firstOpen = 0;
+    if (currentChapters.length) openChapter(currentChapters[firstOpen], firstOpen);
+  });
+}
+
+function showModuleView(m) { if (m) openModule(m); }
+
+function renderChapterList() {
+  var list = document.getElementById('chapter-list');
+  list.innerHTML = '';
+  currentChapters.forEach(function(c, i) {
+    var done = isChapterDone(c.chapter_id);
+    var unlocked = isChapterUnlocked(i);
+    var item = document.createElement('div');
+    item.className = 'chapter-item' + (done ? ' done-ch' : '') + (unlocked ? ' clickable' : ' locked-ch');
+    item.id = 'ch-item-' + c.chapter_id;
+    var iconClass = done ? 'ch-icon done-icon' : 'ch-icon';
+    var iconContent = done ? '✓' : (unlocked ? String(i+1).padStart(2,'0') : '🔒');
+    var subText = '';
+    if (!unlocked) subText = '<div class="ch-sub">Schließe das vorherige Kapitel ab</div>';
+    else if (c.video_url) subText = '<div class="ch-sub">Video · Kapitel</div>';
+    else if (c.image_url) subText = '<div class="ch-sub">Bild · Kapitel</div>';
+    else subText = '<div class="ch-sub">Lesen</div>';
+    item.innerHTML = '<div class="' + iconClass + '">' + iconContent + '</div>' +
+      '<div class="ch-body"><div class="ch-title">' + esc(c.title) + '</div>' + subText + '</div>';
+    if (unlocked) item.onclick = (function(ch, idx) { return function() { openChapter(ch, idx); }; })(c, i);
+    list.appendChild(item);
+  });
+  if (currentQuiz && currentQuiz.length > 0) {
+    var passed = isModulePassed(currentModule.module_id);
+    var quizUnlocked = allChaptersDone();
+    var qi = document.createElement('div');
+    qi.className = 'chapter-item' + (passed ? ' done-ch' : '') + (quizUnlocked ? ' clickable' : ' locked-ch');
+    qi.innerHTML = '<div class="ch-icon' + (passed ? ' done-icon' : '') + '">' +
+      (passed ? '✓' : (quizUnlocked ? '§' : '🔒')) + '</div>' +
+      '<div class="ch-body"><div class="ch-title">Abschlusstest Modul</div>' +
+      '<div class="ch-sub">' + (quizUnlocked
+        ? currentQuiz.length + ' Fragen · Mind. ' + (currentModule.quiz_min_score||70) + '%'
+        : 'Schließe erst alle Kapitel ab') + '</div></div>';
+    if (quizUnlocked) qi.onclick = function() { showModuleQuiz(); };
+    list.appendChild(qi);
+  }
+}
+
+function openChapter(c, idx) {
+  if (!isChapterUnlocked(idx)) return;
+  document.querySelectorAll('.chapter-item').forEach(function(el) { el.classList.remove('active-ch'); });
+  var item = document.getElementById('ch-item-' + c.chapter_id);
+  if (item) item.classList.add('active-ch');
+  var prev = idx > 0 ? currentChapters[idx-1] : null;
+  var next = idx < currentChapters.length-1 ? currentChapters[idx+1] : null;
+  var nextUnlocked = next && isChapterUnlocked(idx+1);
+  var done = isChapterDone(c.chapter_id);
+  document.getElementById('chapter-content-wrap').innerHTML =
+    '<div class="chapter-content">' + buildMediaHtml(c) + sanitizeChapterHtml(c.content_html || '') + '</div>' +
+    '<div class="chapter-nav">' +
+    (prev ? '<button class="btn-sec" onclick="openChapter(currentChapters['+(idx-1)+'],'+(idx-1)+')">← '+esc(prev.title)+'</button>' : '<div></div>') +
+    (done
+      ? '<button class="btn-sec" disabled style="color:var(--green);border-color:rgba(139,173,94,0.4);cursor:default;">✓ Abgeschlossen</button>'
+      : '<button class="btn-complete" onclick="markDone(\''+escAttr(c.chapter_id)+'\','+idx+', this)">Kapitel abschließen ✓</button>') +
+    (next
+      ? (nextUnlocked
+          ? '<button class="btn-sec" onclick="openChapter(currentChapters['+(idx+1)+'],'+(idx+1)+')">'+esc(next.title)+' →</button>'
+          : '<button class="btn-sec" disabled style="opacity:0.4;cursor:not-allowed;">'+esc(next.title)+' →</button>')
+      : '<div></div>') +
+    '</div>';
+}
+
+function sanitizeChapterHtml(html) {
+  var template = document.createElement('template');
+  template.innerHTML = html || '';
+  var allowed = {
+    A: true, B: true, BLOCKQUOTE: true, BR: true, CODE: true, DIV: true, EM: true,
+    H1: true, H2: true, H3: true, H4: true, HR: true, I: true, IMG: true, LI: true,
+    OL: true, P: true, PRE: true, SPAN: true, STRONG: true, TABLE: true,
+    TBODY: true, TD: true, TH: true, THEAD: true, TR: true, U: true, UL: true
+  };
+  var attrAllow = {
+    A: { href: true, title: true, target: true },
+    IMG: { src: true, alt: true, title: true, width: true, height: true },
+    TD: { colspan: true, rowspan: true },
+    TH: { colspan: true, rowspan: true }
+  };
+  function safeUrl(value) {
+    var v = (value || '').trim().toLowerCase();
+    return v.indexOf('http://') === 0 || v.indexOf('https://') === 0 || v.indexOf('mailto:') === 0 || v.indexOf('#') === 0;
+  }
+  function clean(node) {
+    Array.prototype.slice.call(node.childNodes).forEach(function(child) {
+      if (child.nodeType === 8) {
+        child.remove();
+        return;
+      }
+      if (child.nodeType !== 1) return;
+      var tag = child.tagName;
+      if (!allowed[tag]) {
+        if (tag === 'SCRIPT' || tag === 'STYLE' || tag === 'IFRAME' || tag === 'OBJECT' || tag === 'EMBED') {
+          child.remove();
+        } else {
+          clean(child);
+          var frag = document.createDocumentFragment();
+          while (child.firstChild) frag.appendChild(child.firstChild);
+          child.replaceWith(frag);
+        }
+        return;
+      }
+      Array.prototype.slice.call(child.attributes).forEach(function(attr) {
+        var name = attr.name.toLowerCase();
+        var allowedForTag = attrAllow[tag] && attrAllow[tag][name];
+        if (name.indexOf('on') === 0 || name === 'style' || !allowedForTag) {
+          child.removeAttribute(attr.name);
+          return;
+        }
+        if ((name === 'href' || name === 'src') && !safeUrl(attr.value)) child.removeAttribute(attr.name);
+      });
+      if (tag === 'A' && child.getAttribute('target') === '_blank') {
+        child.setAttribute('rel', 'noopener noreferrer');
+      }
+      clean(child);
+    });
+  }
+  clean(template.content);
+  return template.innerHTML;
+}
+
+function buildMediaHtml(c) {
+  var html = '';
+  var videos = c.video_url ? c.video_url.toString().split(',').map(function(v){ return v.trim(); }).filter(Boolean) : [];
+  videos.forEach(function(vUrl) {
+    var yt = vUrl.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]+)/);
+    html += '<div class="media-block">' +
+      (yt
+        ? '<iframe class="chapter-video" src="https://www.youtube.com/embed/'+yt[1]+'" allowfullscreen></iframe>'
+        : '<video class="chapter-video" controls><source src="'+esc(vUrl)+'"></video>') +
+      '</div>';
+  });
+  var images = c.image_url ? c.image_url.toString().split(',').map(function(v){ return v.trim(); }).filter(Boolean) : [];
+  images.forEach(function(imgUrl) {
+    html += '<div class="media-block"><img src="'+esc(imgUrl)+'" alt="" loading="lazy"></div>';
+  });
+  return html;
+}
+
+function markDone(chapterId, idx, btn) {
+  var restore = setButtonLoading(btn, 'Speichere ...');
+  api({ action: 'saveProgress', token: session.token, module_id: currentModule.module_id, chapter_id: chapterId }, function(res) {
+    restore();
+    if (res.ok) {
+      userProgress.progress.push({ chapter_id: chapterId, module_id: currentModule.module_id, status: 'completed' });
+      renderChapterList();
+      openChapter(currentChapters[idx], idx);
+      toast('Kapitel abgeschlossen ✓');
+      if (idx+1 < currentChapters.length) {
+        setTimeout(function() { openChapter(currentChapters[idx+1], idx+1); }, 600);
+      }
+    } else {
+      toast('Fehler: ' + (res.error || 'Unbekannt'));
+    }
+  });
+}
+
+// ================= MODUL-QUIZ =================
+function showModuleQuiz() {
+  if (!allChaptersDone()) { toast('Bitte schließe erst alle Kapitel ab!'); return; }
+  if (!currentQuiz || !currentQuiz.length) return;
+  hideAllScreens();
+  document.getElementById('quiz-screen').classList.add('active');
+  window.scrollTo(0, 0);
+  document.getElementById('quiz-back-btn').onclick = function(){ showModuleView(currentModule); };
+  currentFinalQuiz = null;
+  var wrap = document.getElementById('quiz-wrap');
+  wrap.innerHTML =
+    '<div class="quiz-kicker">Modul-Abschluss</div>' +
+    '<div class="quiz-title">'+esc(currentModule.title)+'</div>' +
+    '<div class="quiz-sub">'+currentQuiz.length+' Fragen · Mindestpunktzahl '+(currentModule.quiz_min_score||70)+'%</div>' +
+    '<div id="quiz-questions"></div>' +
+    '<button class="btn-primary" style="margin-top:1.5rem;width:auto;padding:13px 28px;" onclick="submitModuleQuiz(this)"><span class="btn-label">Quiz auswerten</span></button>';
+  renderQuizQuestions(currentQuiz);
+}
+
+function submitModuleQuiz(btn) {
+  var data = collectAnswers(currentQuiz);
+  if (!data) return;
+  var restore = setButtonLoading(btn, 'Werte aus ...');
+  api({ action: 'submitQuiz', token: session.token, module_id: currentModule.module_id, answers: data.answers }, function(res) {
+    restore();
+    if (!res.ok) { toast('Fehler: ' + (res.error || 'Unbekannt')); return; }
+    applyQuizFeedback(res.results || []);
+    if (res.passed) {
+      userProgress.quizResults.push({ module_id: currentModule.module_id, passed: 'TRUE' });
+      var modIdStr = (currentModule.module_id || '').toString();
+      modulesCache.forEach(function(m) {
+        if ((m.module_id || '').toString() === modIdStr) {
+          m.passed = true;
+        }
+      });
+    }
+    showQuizResult(res, res.score || 0, false);
+  });
+}
+
+// ================= BEREICHSTEST (FINAL) =================
+function startFinalQuiz(bereich, btn) {
+  var restoreStartButton = setButtonLoading(btn, 'Lade Test ...');
+  hideAllScreens();
+  document.getElementById('quiz-screen').classList.add('active');
+  window.scrollTo(0, 0);
+  document.getElementById('quiz-back-btn').onclick = function(){ showHome(); };
+  document.getElementById('quiz-wrap').innerHTML = '<div class="loading-center"><div class="spinner"></div></div>';
+  api({ action: 'getFinalQuiz', token: session.token, bereich: bereich }, function(res) {
+    restoreStartButton();
+    if (!res.ok) {
+      document.getElementById('quiz-wrap').innerHTML = '<p style="color:var(--muted);">Fehler: ' + esc(res.error || 'Unbekannt') + '</p>';
+      return;
+    }
+    if (!res.questions || !res.questions.length) {
+      document.getElementById('quiz-wrap').innerHTML = '<p style="color:var(--muted);">Für diesen Bereich sind noch keine Fragen hinterlegt.</p>';
+      return;
+    }
+    currentFinalQuiz = { bereich: bereich, questions: res.questions, minScore: res.minScore };
+    var wrap = document.getElementById('quiz-wrap');
+    wrap.innerHTML =
+      '<div class="quiz-kicker">Bereichs-Abschlusstest</div>' +
+      '<div class="quiz-title">' + esc(bereich) + '</div>' +
+      '<div class="quiz-sub">' + res.questions.length + ' Fragen · Mindestpunktzahl ' + res.minScore + '%</div>' +
+      '<div id="quiz-questions"></div>' +
+      '<button class="btn-primary" style="margin-top:1.5rem;width:auto;padding:13px 28px;" onclick="submitFinalQuizUI(this)"><span class="btn-label">Test auswerten</span></button>';
+    renderQuizQuestions(res.questions);
+  });
+}
+
+function submitFinalQuizUI(btn) {
+  if (!currentFinalQuiz) return;
+  var data = collectAnswers(currentFinalQuiz.questions);
+  if (!data) return;
+  var restore = setButtonLoading(btn, 'Werte aus ...');
+  api({ action: 'submitFinalQuiz', token: session.token, bereich: currentFinalQuiz.bereich, answers: data.answers }, function(res) {
+    restore();
+    if (!res.ok) { toast('Fehler: ' + (res.error || 'Unbekannt')); return; }
+    applyQuizFeedback(res.results || []);
+    if (res.passed) {
+      userProgress.quizResults.push({ module_id: 'final_' + currentFinalQuiz.bereich, passed: 'TRUE' });
+      bereichStatusCache.forEach(function(bs) {
+        if (bs.bereich === currentFinalQuiz.bereich) {
+          bs.final_passed = true;
+          bs.certificate_ready = true;
+        }
+      });
+    }
+    showQuizResult(res, res.score || 0, true);
+  });
+}
+
+// ================= QUIZ-UTILS =================
+function renderQuizQuestions(questions) {
+  var qWrap = document.getElementById('quiz-questions');
+  qWrap.innerHTML = '';
+  questions.forEach(function(q, qi) {
+    var div = document.createElement('div');
+    div.className = 'quiz-question';
+    var pEl = document.createElement('p');
+    pEl.setAttribute('data-qnum', 'Frage ' + String(qi+1).padStart(2, '0') + ' / ' + String(questions.length).padStart(2, '0'));
+    pEl.textContent = q.question;
+    div.appendChild(pEl);
+    (q.options||[]).forEach(function(opt, oi) {
+      var label = document.createElement('div');
+      label.className = 'quiz-option';
+      label.id = 'opt_'+qi+'_'+oi;
+      label.innerHTML = '<span>'+String.fromCharCode(65+oi)+'</span><span>'+esc(opt)+'</span>';
+      label.onclick = function() {
+        div.querySelectorAll('.quiz-option').forEach(function(o){ o.classList.remove('selected'); });
+        label.classList.add('selected');
+      };
+      div.appendChild(label);
+    });
+    qWrap.appendChild(div);
+  });
+}
+
+function collectAnswers(questions) {
+  var answers = {}, answered = true;
+  questions.forEach(function(q, qi) {
+    var sel = document.querySelector('#quiz-questions .quiz-question:nth-child('+(qi+1)+') .selected');
+    if (!sel) { answered = false; return; }
+    var optIdx = parseInt(sel.id.split('_')[2]);
+    answers[qi] = optIdx;
+  });
+  if (!answered) { toast('Bitte alle Fragen beantworten!'); return null; }
+  return { answers: answers };
+}
+
+function applyQuizFeedback(results) {
+  results.forEach(function(r) {
+    var qi = parseInt(r.index, 10);
+    var correct = parseInt(r.correct_index, 10);
+    var selected = r.selected_index === null || r.selected_index === undefined ? null : parseInt(r.selected_index, 10);
+    var qEl = document.querySelector('#quiz-questions .quiz-question:nth-child('+(qi+1)+')');
+    if (qEl) {
+      qEl.querySelectorAll('.quiz-option').forEach(function(o) { o.onclick = null; });
+    }
+    if (!isNaN(correct)) {
+      var correctEl = document.getElementById('opt_'+qi+'_'+correct);
+      if (correctEl) correctEl.classList.add('correct');
+    }
+    if (selected !== null && !isNaN(selected) && selected !== correct) {
+      var wrongEl = document.getElementById('opt_'+qi+'_'+selected);
+      if (wrongEl) wrongEl.classList.add('wrong');
+    }
+  });
+}
+
+var lastNews = [];
+
+function showQuizResult(res, pct, isFinal) {
+  document.querySelector('#quiz-wrap .btn-primary').style.display = 'none';
+  var result = document.createElement('div');
+  result.className = 'quiz-result';
+  var againBtn = !res.passed
+    ? '<button class="btn-sec" style="margin-top:1rem;" onclick="' + (isFinal
+        ? "startFinalQuiz('"+escAttr(currentFinalQuiz.bereich)+"', this)"
+        : "showModuleQuiz()") + '">Nochmal versuchen</button>'
+    : '';
+
+  var backTarget, backLabel;
+  if (isFinal) {
+    backTarget = 'showHome()';
+    backLabel  = 'Zur Übersicht';
+  } else if (res.passed) {
+    backTarget = 'showHomeFromCache()';
+    backLabel  = 'Zur Modulübersicht';
+  } else {
+    backTarget = 'showModuleView(currentModule)';
+    backLabel  = 'Zurück zum Modul';
+  }
+
+  var backBtn = '<button class="btn-sec" style="margin-top:1rem;margin-left:0.5rem;" onclick="' + backTarget + '">' + backLabel + '</button>';
+  result.innerHTML = '<div class="quiz-score"><em>'+pct+'</em>%</div>' +
+    '<div class="'+(res.passed?'quiz-passed':'quiz-failed')+'">' +
+    (res.passed ? '✓ Bestanden! Glückwunsch.' : '✗ Nicht bestanden · Mindestpunktzahl '+res.minScore+'%') + '</div>' +
+    '<div style="margin-top:1rem;">' + againBtn + backBtn + '</div>';
+  document.getElementById('quiz-wrap').appendChild(result);
+
+  if (isFinal && res.passed) {
+    setTimeout(function() { showCongrats(currentFinalQuiz.bereich); }, 800);
+  }
+}
+
+function showHomeFromCache() {
+  hideAllScreens();
+  document.getElementById('home-screen').classList.add('active');
+  window.scrollTo(0, 0);
+  renderStats();
+  renderNews(lastNews);
+  renderModuleGrid();
+  renderBereichstestSection();
+}
+
+// ================= KONFETTI =================
+function showCongrats(bereich) {
+  document.getElementById('gz-bereich').textContent = bereich;
+  document.getElementById('gz-download').onclick = function() {
+    var btn = this;
+    var restore = setButtonLoading(btn, '⏳ Generiere ...');
+    api({ action: 'generateCertificate', token: session.token, bereich: bereich }, function(res) {
+      restore();
+      if (res.ok) {
+        window.open(res.url, '_blank');
+      } else {
+        toast('Fehler: ' + (res.error || 'Unbekannt'));
+      }
+    });
+  };
+  document.getElementById('confetti-overlay').classList.add('show');
+  startConfetti();
+  refreshCertificateButtons();
+}
+
+function closeConfetti() {
+  document.getElementById('confetti-overlay').classList.remove('show');
+  stopConfetti();
+}
+
+var confettiInterval = null;
+var confettiParticles = [];
+
+function startConfetti() {
+  var canvas = document.getElementById('confetti-canvas');
+  var ctx = canvas.getContext('2d');
+  function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+  resize();
+  window.addEventListener('resize', resize);
+
+  confettiParticles = [];
+  var colors = ['#C9A96A','#B87333','#8BAD5E','#ece6d8','#a8864b'];
+  for (var i = 0; i < 180; i++) {
+    confettiParticles.push({
+      x: Math.random() * canvas.width,
+      y: Math.random() * -canvas.height,
+      size: Math.random() * 8 + 4,
+      color: colors[Math.floor(Math.random() * colors.length)],
+      vy: Math.random() * 3 + 2,
+      vx: (Math.random() - 0.5) * 2,
+      angle: Math.random() * Math.PI * 2,
+      spin: (Math.random() - 0.5) * 0.2
+    });
+  }
+
+  if (confettiInterval) cancelAnimationFrame(confettiInterval);
+  function loop() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    confettiParticles.forEach(function(p) {
+      p.y += p.vy;
+      p.x += p.vx;
+      p.angle += p.spin;
+      if (p.y > canvas.height + 20) {
+        p.y = -20;
+        p.x = Math.random() * canvas.width;
+      }
+      ctx.save();
+      ctx.translate(p.x, p.y);
+      ctx.rotate(p.angle);
+      ctx.fillStyle = p.color;
+      ctx.fillRect(-p.size/2, -p.size/4, p.size, p.size/2);
+      ctx.restore();
+    });
+    confettiInterval = requestAnimationFrame(loop);
+  }
+  loop();
+}
+
+function stopConfetti() {
+  if (confettiInterval) {
+    cancelAnimationFrame(confettiInterval);
+    confettiInterval = null;
+  }
+  var canvas = document.getElementById('confetti-canvas');
+  var ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+}
+
+// ================= API + UTILS =================
+function api(body, cb) {
+  if (!API) {
+    cb({ ok: false, error: 'GAS-API ist noch nicht konfiguriert' });
+    return;
+  }
+
+  if (API.indexOf('script.google.com') > -1) {
+    jsonpApi(body, cb);
+    return;
+  }
+
+  fetch(API, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain' },
+    body: JSON.stringify(body)
+  })
+    .then(function(r){ return r.json(); })
+    .then(cb)
+    .catch(function(e){ console.error(e); cb({ ok: false, error: 'Verbindungsfehler' }); toast('Verbindungsfehler'); });
+}
+
+function jsonpApi(body, cb) {
+  var callbackName = '__academy_jsonp_' + Date.now() + '_' + Math.floor(Math.random() * 1000000);
+  var sep = API.indexOf('?') === -1 ? '?' : '&';
+  var script = document.createElement('script');
+  var done = false;
+  var timer = setTimeout(function() {
+    finish({ ok: false, error: 'Zeitüberschreitung beim GAS-Aufruf' });
+  }, 30000);
+
+  function cleanup() {
+    clearTimeout(timer);
+    try { delete window[callbackName]; } catch(e) { window[callbackName] = undefined; }
+    if (script.parentNode) script.parentNode.removeChild(script);
+  }
+
+  function finish(res) {
+    if (done) return;
+    done = true;
+    cleanup();
+    cb(res);
+  }
+
+  window[callbackName] = finish;
+  script.onerror = function() {
+    finish({ ok: false, error: 'Verbindungsfehler' });
+  };
+  script.src = API + sep + 'api=1&callback=' + encodeURIComponent(callbackName) +
+    '&body=' + encodeURIComponent(JSON.stringify(body));
+  document.head.appendChild(script);
+}
+function esc(str) {
+  if (str === undefined || str === null) return '';
+  return decodeTextEntities(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function escAttr(str) {
+  if (str === undefined || str === null) return '';
+  return decodeTextEntities(str).replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/"/g,'&quot;');
+}
+function decodeTextEntities(str) {
+  return str.toString()
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&apos;/g, "'");
+}
+function toast(msg) {
+  var t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(function(){ t.classList.remove('show'); }, 3000);
+}
+
+// ============ DEMO / PREVIEW FALLBACK ============
+// When this file runs outside Apps Script, the template tag is not substituted, so API
+// stays literal and nothing loads. Auto-inject mock data so the design is
+// viewable in a plain browser. This has NO effect when served by Apps Script
+// because the template tag gets replaced with a real URL.
+(function() {
+  var demoRequested = window.location.search.indexOf('demo=1') > -1;
+  var localPreview = window.location.protocol === 'file:' ||
+    window.location.hostname === 'localhost' ||
+    window.location.hostname === '127.0.0.1';
+  if (!demoRequested && (!localPreview || API)) return;
+  // Mock mode
+  var mockUser = { name: 'Anna Schuster', role: 'employee' };
+  var mockModules = [
+    { module_id:'m1', title:'Hygiene & HACCP', description:'Die Grundlagen der Küchenhygiene, Kontrollpunkte und Reinigungsroutinen nach HACCP.', bereich:'Küche', order_index:1, pflicht:true, quiz_min_score:70, locked:false, total_chapters:6, done_chapters:6, passed:true },
+    { module_id:'m2', title:'Messerkunde & Schnitttechnik', description:'Vom Julienne bis Brunoise – sauber, sicher und effizient arbeiten am Board.', bereich:'Küche', order_index:2, pflicht:true, quiz_min_score:70, locked:false, total_chapters:5, done_chapters:3, passed:false },
+    { module_id:'m3', title:'Saisonale Küche', description:'Regionale Produkte erkennen, einsetzen und respektvoll verarbeiten.', bereich:'Küche', order_index:3, pflicht:false, quiz_min_score:70, locked:true, required_title:'Messerkunde & Schnitttechnik', total_chapters:4, done_chapters:0, passed:false },
+    { module_id:'m4', title:'Gästekommunikation', description:'Der Erstkontakt, die Beschwerde, der Abschied – souverän durch jeden Moment.', bereich:'Service', order_index:1, pflicht:true, quiz_min_score:70, locked:false, total_chapters:5, done_chapters:2, passed:false },
+    { module_id:'m5', title:'Wein & Speisenbegleitung', description:'Welches Glas, welcher Gang, welches Temperament – die Kunst der Paarung.', bereich:'Service', order_index:2, pflicht:false, quiz_min_score:70, locked:false, total_chapters:7, done_chapters:0, passed:false },
+    { module_id:'m6', title:'Maische & Gärung', description:'Vom Korn zur Würze – ein Blick in die Handwerkskammer der Brauerei.', bereich:'Brauerei', order_index:1, pflicht:true, quiz_min_score:70, locked:false, total_chapters:8, done_chapters:8, passed:true }
+  ];
+  var mockBereichStatus = [
+    { bereich:'Küche', total_modules:3, passed_modules:1, final_unlocked:false, final_passed:false },
+    { bereich:'Service', total_modules:2, passed_modules:0, final_unlocked:false, final_passed:false },
+    { bereich:'Brauerei', total_modules:1, passed_modules:1, final_unlocked:true, final_passed:false }
+  ];
+  var mockNews = [
+    { bereich:'Allgemein', title:'Neue Saisonkarte ab Mai', content:'Ab dem 1. Mai startet unsere Frühlingskarte mit Bärlauch, Spargel und ersten Kräutern aus dem eigenen Garten. Bitte schaut euch die neuen Gerichte in der Rezeptkartei an.', updated_at: new Date().toISOString() },
+    { bereich:'Küche', title:'Neuer Kühlschrank im Pass', content:'Im Pass steht ab Montag der neue Kühlschrank. Bitte beachtet die geänderte Temperaturzone für Fisch (1–2 °C).', updated_at: new Date(Date.now()-86400000*2).toISOString() },
+    { bereich:'Brauerei', title:'Sudwerk-Wartung KW 18', content:'Kurze Unterbrechung am Dienstag: Jens wartet das Sudwerk zwischen 9 und 11 Uhr.', updated_at: new Date(Date.now()-86400000*4).toISOString() }
+  ];
+  var mockModuleQuiz = [
+    { question:'Demo-Frage: Welche Temperatur ist korrekt?', options:['2 °C','7 °C','12 °C','20 °C'], correct_index:0 }
+  ];
+  var mockFinalQuiz = [
+    { question:'Demo Abschlussfrage?', options:['A','B','C','D'], correct_index:1 }
+  ];
+  function mockGrade(questions, answers) {
+    var score = 0;
+    var results = questions.map(function(q, i) {
+      var selected = parseInt((answers || {})[i], 10);
+      var correct = parseInt(q.correct_index, 10) || 0;
+      var ok = selected === correct;
+      if (ok) score++;
+      return { index:i, selected_index:isNaN(selected) ? null : selected, correct_index:correct, correct:ok };
+    });
+    return { pct: questions.length ? Math.round(score / questions.length * 100) : 0, results: results };
+  }
+
+  window.api = function(body, cb) {
+    setTimeout(function() {
+      var a = body.action;
+      if (a === 'login') cb({ ok:true, token:'demo', user: mockUser });
+      else if (a === 'getInitialData') cb({ ok:true, isAdmin:false, modules: mockModules, bereichStatus: mockBereichStatus, news: mockNews, progress:[
+        {chapter_id:'c1', module_id:'m2', status:'completed'},
+        {chapter_id:'c2', module_id:'m2', status:'completed'},
+        {chapter_id:'c3', module_id:'m2', status:'completed'},
+        {chapter_id:'c4', module_id:'m4', status:'completed'},
+        {chapter_id:'c5', module_id:'m4', status:'completed'}
+      ], quizResults:[
+        {module_id:'m1', passed:'TRUE'},
+        {module_id:'m6', passed:'TRUE'}
+      ] });
+      else if (a === 'getCertificateInfo') cb({ ok:true, certificates: [{bereich:'Brauerei', available:false, passed:false, isAdmin:false}], name: mockUser.name });
+      else if (a === 'getChapters') cb({ ok:true, chapters:[
+        { chapter_id:'c1', title:'Einführung', content_html:'<h2>Willkommen im Kapitel</h2><p>Dies ist ein Demo-Kapitel. In der Live-Umgebung werden hier Inhalte, Bilder und Videos aus der Academy geladen.</p><p><strong>Wichtig:</strong> Das Design ist voll funktionsfähig — lediglich die Daten sind hier Platzhalter.</p>', order_index:1 },
+        { chapter_id:'c2', title:'Grundtechniken', content_html:'<h2>Grundtechniken</h2><p>Dies ist Kapitel zwei.</p>', order_index:2 }
+      ], quiz: mockModuleQuiz.map(function(q){ return { question:q.question, options:q.options }; }) });
+      else if (a === 'saveProgress') cb({ ok:true });
+      else if (a === 'submitQuiz') {
+        var mq = mockGrade(mockModuleQuiz, body.answers);
+        cb({ ok:true, passed: mq.pct >= 70, minScore:70, score:mq.pct, results:mq.results });
+      }
+      else if (a === 'getFinalQuiz') cb({ ok:true, questions: mockFinalQuiz.map(function(q){ return { question:q.question, options:q.options }; }), minScore:80, bereich: body.bereich });
+      else if (a === 'submitFinalQuiz') {
+        var fq = mockGrade(mockFinalQuiz, body.answers);
+        cb({ ok:true, passed: fq.pct >= 80, minScore:80, score:fq.pct, results:fq.results });
+      }
+      else if (a === 'generateCertificate') cb({ ok:true, url:'#demo-certificate' });
+      else cb({ ok:false, error:'Demo-Modus' });
+    }, 150);
+  };
+})();
+</script>
+</body>
+</html>
