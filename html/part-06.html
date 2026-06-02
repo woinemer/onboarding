@@ -1,0 +1,231 @@
+PRE: true, SPAN: true, STRONG: true, TABLE: true,
+    TBODY: true, TD: true, TH: true, THEAD: true, TR: true, U: true, UL: true
+  };
+  var attrAllow = {
+    A: { href: true, title: true, target: true },
+    IMG: { src: true, alt: true, title: true, width: true, height: true },
+    TD: { colspan: true, rowspan: true },
+    TH: { colspan: true, rowspan: true }
+  };
+  function safeUrl(value) {
+    var v = (value || '').trim().toLowerCase();
+    return v.indexOf('http://') === 0 || v.indexOf('https://') === 0 || v.indexOf('mailto:') === 0 || v.indexOf('#') === 0;
+  }
+  function clean(node) {
+    Array.prototype.slice.call(node.childNodes).forEach(function(child) {
+      if (child.nodeType === 8) {
+        child.remove();
+        return;
+      }
+      if (child.nodeType !== 1) return;
+      var tag = child.tagName;
+      if (!allowed[tag]) {
+        if (tag === 'SCRIPT' || tag === 'STYLE' || tag === 'IFRAME' || tag === 'OBJECT' || tag === 'EMBED') {
+          child.remove();
+        } else {
+          clean(child);
+          var frag = document.createDocumentFragment();
+          while (child.firstChild) frag.appendChild(child.firstChild);
+          child.replaceWith(frag);
+        }
+        return;
+      }
+      Array.prototype.slice.call(child.attributes).forEach(function(attr) {
+        var name = attr.name.toLowerCase();
+        var allowedForTag = attrAllow[tag] && attrAllow[tag][name];
+        if (name.indexOf('on') === 0 || name === 'style' || !allowedForTag) {
+          child.removeAttribute(attr.name);
+          return;
+        }
+        if ((name === 'href' || name === 'src') && !safeUrl(attr.value)) child.removeAttribute(attr.name);
+      });
+      if (tag === 'A' && child.getAttribute('target') === '_blank') {
+        child.setAttribute('rel', 'noopener noreferrer');
+      }
+      clean(child);
+    });
+  }
+  clean(template.content);
+  return template.innerHTML;
+}
+
+function buildMediaHtml(c) {
+  var html = '';
+  var videos = c.video_url ? c.video_url.toString().split(',').map(function(v){ return v.trim(); }).filter(Boolean) : [];
+  videos.forEach(function(vUrl) {
+    var yt = vUrl.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]+)/);
+    html += '<div class="media-block">' +
+      (yt
+        ? '<iframe class="chapter-video" src="https://www.youtube.com/embed/'+yt[1]+'" allowfullscreen></iframe>'
+        : '<video class="chapter-video" controls><source src="'+esc(vUrl)+'"></video>') +
+      '</div>';
+  });
+  var images = c.image_url ? c.image_url.toString().split(',').map(function(v){ return v.trim(); }).filter(Boolean) : [];
+  images.forEach(function(imgUrl) {
+    html += '<div class="media-block"><img src="'+esc(imgUrl)+'" alt="" loading="lazy"></div>';
+  });
+  return html;
+}
+
+function markDone(chapterId, idx, btn) {
+  var restore = setButtonLoading(btn, 'Speichere ...');
+  api({ action: 'saveProgress', token: session.token, module_id: currentModule.module_id, chapter_id: chapterId }, function(res) {
+    restore();
+    if (res.ok) {
+      userProgress.progress.push({ chapter_id: chapterId, module_id: currentModule.module_id, status: 'completed' });
+      renderChapterList();
+      openChapter(currentChapters[idx], idx);
+      toast('Kapitel abgeschlossen ✓');
+      if (idx+1 < currentChapters.length) {
+        setTimeout(function() { openChapter(currentChapters[idx+1], idx+1); }, 600);
+      }
+    } else {
+      toast('Fehler: ' + (res.error || 'Unbekannt'));
+    }
+  });
+}
+
+// ================= MODUL-QUIZ =================
+function showModuleQuiz() {
+  if (!allChaptersDone()) { toast('Bitte schließe erst alle Kapitel ab!'); return; }
+  if (!currentQuiz || !currentQuiz.length) return;
+  hideAllScreens();
+  document.getElementById('quiz-screen').classList.add('active');
+  window.scrollTo(0, 0);
+  document.getElementById('quiz-back-btn').onclick = function(){ showModuleView(currentModule); };
+  currentFinalQuiz = null;
+  var wrap = document.getElementById('quiz-wrap');
+  wrap.innerHTML =
+    '<div class="quiz-kicker">Modul-Abschluss</div>' +
+    '<div class="quiz-title">'+esc(currentModule.title)+'</div>' +
+    '<div class="quiz-sub">'+currentQuiz.length+' Fragen · Mindestpunktzahl '+(currentModule.quiz_min_score||70)+'%</div>' +
+    '<div id="quiz-questions"></div>' +
+    '<button class="btn-primary" style="margin-top:1.5rem;width:auto;padding:13px 28px;" onclick="submitModuleQuiz(this)"><span class="btn-label">Quiz auswerten</span></button>';
+  renderQuizQuestions(currentQuiz);
+}
+
+function submitModuleQuiz(btn) {
+  var data = collectAnswers(currentQuiz);
+  if (!data) return;
+  var restore = setButtonLoading(btn, 'Werte aus ...');
+  api({ action: 'submitQuiz', token: session.token, module_id: currentModule.module_id, answers: data.answers }, function(res) {
+    restore();
+    if (!res.ok) { toast('Fehler: ' + (res.error || 'Unbekannt')); return; }
+    applyQuizFeedback(res.results || []);
+    if (res.passed) {
+      userProgress.quizResults.push({ module_id: currentModule.module_id, passed: 'TRUE' });
+      var modIdStr = (currentModule.module_id || '').toString();
+      modulesCache.forEach(function(m) {
+        if ((m.module_id || '').toString() === modIdStr) {
+          m.passed = true;
+        }
+      });
+    }
+    showQuizResult(res, res.score || 0, false);
+  });
+}
+
+// ================= BEREICHSTEST (FINAL) =================
+function startFinalQuiz(bereich, btn) {
+  var restoreStartButton = setButtonLoading(btn, 'Lade Test ...');
+  hideAllScreens();
+  document.getElementById('quiz-screen').classList.add('active');
+  window.scrollTo(0, 0);
+  document.getElementById('quiz-back-btn').onclick = function(){ showHome(); };
+  document.getElementById('quiz-wrap').innerHTML = '<div class="loading-center"><div class="spinner"></div></div>';
+  api({ action: 'getFinalQuiz', token: session.token, bereich: bereich }, function(res) {
+    restoreStartButton();
+    if (!res.ok) {
+      document.getElementById('quiz-wrap').innerHTML = '<p style="color:var(--muted);">Fehler: ' + esc(res.error || 'Unbekannt') + '</p>';
+      return;
+    }
+    if (!res.questions || !res.questions.length) {
+      document.getElementById('quiz-wrap').innerHTML = '<p style="color:var(--muted);">Für diesen Bereich sind noch keine Fragen hinterlegt.</p>';
+      return;
+    }
+    currentFinalQuiz = { bereich: bereich, questions: res.questions, minScore: res.minScore };
+    var wrap = document.getElementById('quiz-wrap');
+    wrap.innerHTML =
+      '<div class="quiz-kicker">Bereichs-Abschlusstest</div>' +
+      '<div class="quiz-title">' + esc(bereich) + '</div>' +
+      '<div class="quiz-sub">' + res.questions.length + ' Fragen · Mindestpunktzahl ' + res.minScore + '%</div>' +
+      '<div id="quiz-questions"></div>' +
+      '<button class="btn-primary" style="margin-top:1.5rem;width:auto;padding:13px 28px;" onclick="submitFinalQuizUI(this)"><span class="btn-label">Test auswerten</span></button>';
+    renderQuizQuestions(res.questions);
+  });
+}
+
+function submitFinalQuizUI(btn) {
+  if (!currentFinalQuiz) return;
+  var data = collectAnswers(currentFinalQuiz.questions);
+  if (!data) return;
+  var restore = setButtonLoading(btn, 'Werte aus ...');
+  api({ action: 'submitFinalQuiz', token: session.token, bereich: currentFinalQuiz.bereich, answers: data.answers }, function(res) {
+    restore();
+    if (!res.ok) { toast('Fehler: ' + (res.error || 'Unbekannt')); return; }
+    applyQuizFeedback(res.results || []);
+    if (res.passed) {
+      userProgress.quizResults.push({ module_id: 'final_' + currentFinalQuiz.bereich, passed: 'TRUE' });
+      bereichStatusCache.forEach(function(bs) {
+        if (bs.bereich === currentFinalQuiz.bereich) {
+          bs.final_passed = true;
+          bs.certificate_ready = true;
+        }
+      });
+    }
+    showQuizResult(res, res.score || 0, true);
+  });
+}
+
+// ================= QUIZ-UTILS =================
+function renderQuizQuestions(questions) {
+  var qWrap = document.getElementById('quiz-questions');
+  qWrap.innerHTML = '';
+  questions.forEach(function(q, qi) {
+    var div = document.createElement('div');
+    div.className = 'quiz-question';
+    var pEl = document.createElement('p');
+    pEl.setAttribute('data-qnum', 'Frage ' + String(qi+1).padStart(2, '0') + ' / ' + String(questions.length).padStart(2, '0'));
+    pEl.textContent = q.question;
+    div.appendChild(pEl);
+    (q.options||[]).forEach(function(opt, oi) {
+      var label = document.createElement('div');
+      label.className = 'quiz-option';
+      label.id = 'opt_'+qi+'_'+oi;
+      label.innerHTML = '<span>'+String.fromCharCode(65+oi)+'</span><span>'+esc(opt)+'</span>';
+      label.onclick = function() {
+        div.querySelectorAll('.quiz-option').forEach(function(o){ o.classList.remove('selected'); });
+        label.classList.add('selected');
+      };
+      div.appendChild(label);
+    });
+    qWrap.appendChild(div);
+  });
+}
+
+function collectAnswers(questions) {
+  var answers = {}, answered = true;
+  questions.forEach(function(q, qi) {
+    var sel = document.querySelector('#quiz-questions .quiz-question:nth-child('+(qi+1)+') .selected');
+    if (!sel) { answered = false; return; }
+    var optIdx = parseInt(sel.id.split('_')[2]);
+    answers[qi] = optIdx;
+  });
+  if (!answered) { toast('Bitte alle Fragen beantworten!'); return null; }
+  return { answers: answers };
+}
+
+function applyQuizFeedback(results) {
+  results.forEach(function(r) {
+    var qi = parseInt(r.index, 10);
+    var correct = parseInt(r.correct_index, 10);
+    var selected = r.selected_index === null || r.selected_index === undefined ? null : parseInt(r.selected_index, 10);
+    var qEl = document.querySelector('#quiz-questions .quiz-question:nth-child('+(qi+1)+')');
+    if (qEl) {
+      qEl.querySelectorAll('.quiz-option').forEach(function(o) { o.onclick = null; });
+    }
+    if (!isNaN(correct)) {
+      var correctEl = document.getElementById('opt_'+qi+'_'+correct);
+      if (correctEl) correctEl.classList.add('correct');
+    }
+    if (selected !== null && !isNaN(selected) && s

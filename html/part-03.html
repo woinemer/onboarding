@@ -1,0 +1,270 @@
+m: translateY(80px); opacity: 0;
+    transition: all 0.3s;
+    z-index: 999;
+    box-shadow: 0 20px 40px -10px rgba(0,0,0,0.5);
+    max-width: 360px;
+  }
+  .toast.show { transform: translateY(0); opacity: 1; }
+
+  /* ========== SPINNER ========== */
+  .spinner {
+    display: inline-block; width: 22px; height: 22px;
+    border: 2px solid var(--line); border-top-color: var(--gold);
+    border-radius: 50%; animation: spin 0.7s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading-center { display: flex; justify-content: center; padding: 3rem; grid-column: 1 / -1; }
+
+  /* ========== EMPTY STATE ========== */
+  .empty-state {
+    background: var(--paper); border: 1px dashed var(--line); border-radius: 8px;
+    padding: 2.5rem; text-align: center;
+    color: var(--muted); font-size: 0.88rem;
+  }
+
+  /* ========== CONFETTI OVERLAY ========== */
+  #confetti-overlay {
+    position: fixed; inset: 0; z-index: 1000;
+    display: none; align-items: center; justify-content: center;
+    background: rgba(11,10,8,0.92); padding: 1rem;
+    backdrop-filter: blur(6px);
+  }
+  #confetti-overlay.show { display: flex; }
+  #confetti-canvas { position: absolute; inset: 0; pointer-events: none; }
+  .gz-card {
+    background: var(--paper);
+    border: 1px solid var(--gold);
+    border-radius: 12px;
+    padding: 3rem 2.5rem 2.5rem;
+    text-align: center;
+    max-width: 480px;
+    position: relative; z-index: 1;
+    box-shadow: 0 0 80px -10px rgba(201,169,106,0.35), 0 0 0 1px rgba(201,169,106,0.1);
+  }
+  .gz-card::before {
+    content: ''; position: absolute; inset: 8px;
+    border: 1px solid var(--gold-line); border-radius: 8px; pointer-events: none; opacity: 0.5;
+  }
+  .gz-crest {
+    width: 72px; height: 72px; margin: 0 auto 1.25rem;
+    border: 1px solid var(--gold); border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    background: radial-gradient(circle at 35% 30%, rgba(255,220,170,0.3), transparent 60%);
+    position: relative;
+  }
+  .gz-crest::after {
+    content: '★'; font-size: 2.2rem; color: var(--gold);
+    text-shadow: 0 0 20px rgba(201,169,106,0.6);
+  }
+  .gz-kicker {
+    font-family: var(--mono); font-size: 0.66rem;
+    color: var(--gold); letter-spacing: 0.28em;
+    text-transform: uppercase; margin-bottom: 0.6rem;
+  }
+  .gz-title {
+    font-family: var(--serif); color: var(--text);
+    font-size: 1.9rem; margin-bottom: 0.8rem;
+    letter-spacing: -0.01em;
+  }
+  .gz-title em { font-style: italic; color: var(--gold); }
+  .gz-text {
+    color: var(--text-2); font-size: 0.95rem;
+    line-height: 1.65; margin-bottom: 1.75rem;
+  }
+  .gz-bereich { color: var(--gold); font-weight: 500; font-style: italic; font-family: var(--serif); }
+  .gz-actions { display: flex; flex-direction: column; gap: 0.6rem; }
+  .gz-btn {
+    padding: 12px 22px; border-radius: 4px;
+    font-family: var(--sans); font-size: 0.82rem; font-weight: 600;
+    letter-spacing: 0.06em; text-transform: uppercase;
+    cursor: pointer; border: none;
+    transition: all 0.2s;
+  }
+  .gz-btn.primary { background: var(--gold); color: var(--ink); }
+  .gz-btn.primary:hover { background: #d8b87a; box-shadow: 0 8px 20px -8px rgba(201,169,106,0.5); }
+  .gz-btn.secondary {
+    background: transparent; color: var(--text-2);
+    border: 1px solid var(--line);
+  }
+  .gz-btn.secondary:hover { border-color: var(--gold-line); color: var(--text); }
+
+  /* ========== RESPONSIVE ========== */
+  @media (max-width: 640px) {
+    nav { padding: 0.8rem 1rem; }
+    #nav-name { border-left: none; padding-left: 0; }
+    .page-wrap { padding: 1.75rem 1.15rem 4rem; }
+    .welcome-head { font-size: 1.75rem; }
+    .module-view-title { font-size: 1.55rem; }
+    .chapter-content { padding: 1.5rem 1.3rem; }
+    .quiz-wrap { padding: 1.75rem 1.3rem; }
+    .login-box { padding: 2.25rem 1.5rem 1.75rem; }
+    .stat { border-right: none; border-bottom: 1px solid var(--line-soft); }
+    .stat:last-child { border-bottom: none; }
+    .chapter-nav .btn-sec { max-width: 100%; }
+  }
+</style>
+</head>
+<body>
+
+<div id="login-screen">
+  <div class="login-box">
+    <div class="login-crest"></div>
+    <div class="login-logo">Woinemer <em>Onboarding</em></div>
+    <div class="login-sub">Braumanufaktur Brennerei Restaurant</div>
+    <label>Benutzername</label>
+    <input type="text" id="login-user" placeholder="dein.name" autocomplete="username">
+    <label>Passwort</label>
+    <input type="password" id="login-pass" placeholder="••••••••" autocomplete="current-password">
+    <button class="btn-primary" id="btn-login" onclick="doLogin()">
+      <span class="btn-spinner"></span>
+      <span class="btn-label">Anmelden</span>
+    </button>
+    <div class="login-error" id="login-err"></div>
+    <div class="login-foot">Woinemer Hausbrauerei 2026</div>
+  </div>
+</div>
+
+<nav id="main-nav" style="display:none;">
+  <div class="nav-brand">
+    <div>
+      Woinemer Academy
+      <small>Lernwerkstatt</small>
+    </div>
+  </div>
+  <div class="nav-user">
+    <a href="https://script.google.com/macros/s/AKfycbzDA85cieZvNmZZcY8DN3gD4CKZZ8dSenoXKnNobEZfm-S2iwD3QlO4xk44AIu9XXjq/exec" target="_blank" class="btn-rezept">📖 Rezeptkartei</a>
+    <span id="cert-buttons"></span>
+    <span id="nav-name"></span>
+    <button class="btn-logout" onclick="logout()">Abmelden</button>
+  </div>
+</nav>
+
+<div id="home-screen" class="screen">
+  <div class="page-wrap">
+    <div class="welcome-kicker">Willkommen zurück</div>
+    <div class="welcome-head">Hallo, <em id="welcome-name"></em> 👋</div>
+    <p class="welcome-sub">Deine persönliche Lernwerkstatt. Schließe Module ab, meistere Abschlusstests und hol dir dein Zertifikat.</p>
+
+    <div class="stats-strip" id="stats-strip" style="display:none;">
+      <div class="stat">
+        <div class="stat-label">Fortschritt</div>
+        <div class="stat-value"><em id="stat-pct">0</em><span class="unit">%</span></div>
+        <div class="stat-bar"><div class="stat-bar-fill" id="stat-pct-bar" style="width:0%"></div></div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">Module</div>
+        <div class="stat-value"><span id="stat-mods-done">0</span><span class="unit" id="stat-mods-total">/ 0</span></div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">Kapitel</div>
+        <div class="stat-value"><span id="stat-chaps">0</span></div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">Zertifikate</div>
+        <div class="stat-value"><em id="stat-certs">0</em></div>
+      </div>
+    </div>
+
+    <div class="section-label">Neuigkeiten <span class="count" id="news-count"></span></div>
+    <div class="news-grid" id="news-grid"><div class="loading-center"><div class="spinner"></div></div></div>
+
+    <div class="section-label">Deine Module <span class="count" id="mod-count"></span></div>
+    <div class="module-grid" id="module-grid"><div class="loading-center"><div class="spinner"></div></div></div>
+
+    <div id="bereichstest-section"></div>
+  </div>
+</div>
+
+<div id="module-screen" class="screen">
+  <div class="page-wrap">
+    <button class="back-btn" onclick="showHome()">Zurück zur Übersicht</button>
+    <div class="mv-header">
+      <div class="module-view-bereich-tag" id="mv-bereich"></div>
+      <div class="module-view-title" id="mv-title"></div>
+      <div class="module-view-meta" id="mv-desc"></div>
+    </div>
+    <div class="section-label">Kapitel</div>
+    <div class="chapter-list" id="chapter-list"></div>
+    <div id="chapter-content-wrap"></div>
+  </div>
+</div>
+
+<div id="quiz-screen" class="screen">
+  <div class="page-wrap">
+    <button class="back-btn" id="quiz-back-btn">Zurück</button>
+    <div class="quiz-wrap" id="quiz-wrap"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- KONFETTI + GLUECKWUNSCH -->
+<div id="confetti-overlay">
+  <canvas id="confetti-canvas"></canvas>
+  <div class="gz-card">
+    <div class="gz-crest"></div>
+    <div class="gz-kicker">Ausgezeichnet</div>
+    <div class="gz-title">Herzlichen <em>Glückwunsch</em></div>
+    <div class="gz-text">
+      Du hast erfolgreich alle Module und den Abschlusstest für den Bereich
+      <span class="gz-bereich" id="gz-bereich"></span> bestanden. Dein Zertifikat steht zum Download bereit.
+    </div>
+    <div class="gz-actions">
+      <button class="gz-btn primary" id="gz-download">📜 Zertifikat herunterladen</button>
+      <button class="gz-btn secondary" onclick="closeConfetti()">Später</button>
+    </div>
+  </div>
+</div>
+
+<script src="./config.js"></script>
+<script>
+var API = (function() {
+  var templateApi = '<?= ScriptApp.getService().getUrl() ?>';
+  if (templateApi && templateApi.indexOf('<?') === -1 && templateApi.indexOf('ScriptApp') === -1) {
+    return templateApi;
+  }
+
+  var params = new URLSearchParams(window.location.search);
+  var queryApi = params.get('api');
+  if (queryApi) {
+    try { localStorage.setItem('woinemer_academy_api', queryApi); } catch(e) {}
+    return queryApi;
+  }
+
+  if (window.WOINEMER_ACADEMY_API) return window.WOINEMER_ACADEMY_API;
+  try {
+    var storedApi = localStorage.getItem('woinemer_academy_api');
+    if (storedApi) return storedApi;
+  } catch(e) {}
+
+  return '';
+})();
+var session = null;
+var currentModule = null;
+var currentChapters = [];
+var currentQuiz = [];
+var currentFinalQuiz = null;
+var userProgress = { progress: [], quizResults: [] };
+var modulesCache = [];
+var bereichStatusCache = [];
+var isAdminUser = false;
+var certificateCache = [];
+
+function setButtonLoading(btn, label) {
+  if (!btn) return function(){};
+  var oldHtml = btn.innerHTML;
+  var oldText = btn.textContent;
+  var oldDisabled = btn.disabled;
+  btn.disabled = true;
+  btn.classList.add('loading');
+  if (label) {
+    var labelEl = btn.querySelector('.btn-label');
+    if (labelEl) labelEl.textContent = label;
+    else btn.innerHTML = label;
+  }
+  return function() {
+    btn.disabled = oldDisabled;
+    btn.classList.remove('loading');
+    if (label) {
+      var labelEl = btn.querySelector('.btn-label');
+      

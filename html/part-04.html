@@ -1,0 +1,279 @@
+if (labelEl) labelEl.textContent = oldText.trim() || oldHtml;
+      else btn.innerHTML = oldHtml;
+    }
+  };
+}
+
+function initialDataCacheKey() {
+  if (!session || !session.user) return '';
+  return 'woinemer_academy_initial_' + (session.user.user_id || session.user.name || 'user');
+}
+
+function readInitialDataCache() {
+  var key = initialDataCacheKey();
+  if (!key) return null;
+  try {
+    var cached = JSON.parse(localStorage.getItem(key) || 'null');
+    if (!cached || !cached.data || (Date.now() - cached.ts) > 10 * 60 * 1000) return null;
+    return cached.data;
+  } catch(e) {
+    return null;
+  }
+}
+
+function writeInitialDataCache(res) {
+  var key = initialDataCacheKey();
+  if (!key || !res || !res.ok) return;
+  try { localStorage.setItem(key, JSON.stringify({ ts: Date.now(), data: res })); } catch(e) {}
+}
+
+function applyInitialData(res, options) {
+  options = options || {};
+  isAdminUser        = res.isAdmin === true;
+  modulesCache       = res.modules || [];
+  bereichStatusCache = res.bereichStatus || [];
+  userProgress       = { progress: res.progress || [], quizResults: res.quizResults || [] };
+  lastNews           = res.news || [];
+
+  renderStats();
+  renderNews(lastNews);
+  renderModuleGrid();
+  renderBereichstestSection();
+  refreshCertificateButtons({ silent: options.fromCache === true });
+}
+
+// ================= LOGIN =================
+function doLogin() {
+  var btn = document.getElementById('btn-login');
+  if (btn.classList.contains('loading')) return;
+  var u = document.getElementById('login-user').value.trim();
+  var p = document.getElementById('login-pass').value;
+  var err = document.getElementById('login-err');
+  err.style.display = 'none';
+  if (!u || !p) {
+    err.textContent = 'Bitte Benutzername und Passwort eingeben';
+    err.style.display = 'block';
+    return;
+  }
+  btn.classList.add('loading');
+  btn.disabled = true;
+  btn.querySelector('.btn-label').textContent = 'Anmelden ...';
+  api({ action: 'login', username: u, password: p }, function(res) {
+    btn.classList.remove('loading');
+    btn.disabled = false;
+    btn.querySelector('.btn-label').textContent = 'Anmelden';
+    if (res.ok) { session = res; loadApp(); }
+    else { err.textContent = res.error || 'Anmeldung fehlgeschlagen'; err.style.display = 'block'; }
+  });
+}
+['login-user', 'login-pass'].forEach(function(id) {
+  document.getElementById(id).addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') doLogin();
+  });
+});
+
+function logout() {
+  session = null;
+  isAdminUser = false;
+  certificateCache = [];
+  document.getElementById('main-nav').style.display = 'none';
+  document.getElementById('login-screen').style.display = 'flex';
+  hideAllScreens();
+}
+
+function loadApp() {
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('main-nav').style.display = 'flex';
+  document.getElementById('nav-name').textContent = session.user.name;
+  document.getElementById('welcome-name').textContent = session.user.name.split(' ')[0];
+  isAdminUser = (session.user.role || '') === 'admin';
+  showHome();
+}
+
+// ================= HELPER =================
+function isChapterDone(chapterId) {
+  if (!chapterId) return false;
+  var target = chapterId.toString();
+  return userProgress.progress.some(function(p) {
+    return p && p.chapter_id && p.chapter_id.toString() === target;
+  });
+}
+function isPassed(val) {
+  return val === true || val === 'TRUE' || val === 'true';
+}
+function isRequired(val) {
+  if (val === undefined || val === null || val === '') return true;
+  return isPassed(val);
+}
+function isModulePassed(moduleId) {
+  if (!moduleId) return false;
+  var target = moduleId.toString();
+  return userProgress.quizResults.some(function(q) {
+    return q && q.module_id && q.module_id.toString() === target && isPassed(q.passed);
+  });
+}
+function isChapterUnlocked(idx) {
+  if (isAdminUser) return true;
+  if (idx === 0) return true;
+  return isChapterDone(currentChapters[idx - 1].chapter_id);
+}
+function allChaptersDone() {
+  if (isAdminUser) return true;
+  return currentChapters
+    .filter(function(c) { return isRequired(c.pflicht); })
+    .every(function(c) { return isChapterDone(c.chapter_id); });
+}
+
+function hideAllScreens() {
+  ['home-screen','module-screen','quiz-screen'].forEach(function(id) {
+    document.getElementById(id).classList.remove('active');
+  });
+}
+
+// ================= HOME =================
+function showHome() {
+  hideAllScreens();
+  document.getElementById('home-screen').classList.add('active');
+  loadInitialData();
+}
+
+function loadInitialData() {
+  var modGrid  = document.getElementById('module-grid');
+  var newsGrid = document.getElementById('news-grid');
+  var cached = readInitialDataCache();
+  if (cached) {
+    applyInitialData(cached, { fromCache: true });
+  } else {
+    modGrid.innerHTML  = '<div class="loading-center"><div class="spinner"></div></div>';
+    newsGrid.innerHTML = '<div class="loading-center"><div class="spinner"></div></div>';
+  }
+
+  api({ action: 'getInitialData', token: session.token }, function(res) {
+    if (!res.ok) {
+      if (!cached) modGrid.innerHTML = '<p class="empty-state">Fehler beim Laden.</p>';
+      else toast('Aktualisierung fehlgeschlagen');
+      return;
+    }
+    writeInitialDataCache(res);
+    applyInitialData(res);
+  });
+}
+
+function renderStats() {
+  var strip = document.getElementById('stats-strip');
+  if (!modulesCache.length && !bereichStatusCache.length) { strip.style.display = 'none'; return; }
+  strip.style.display = 'grid';
+
+  var totalMods = modulesCache.length;
+  var doneMods  = modulesCache.filter(function(m) { return m.passed === true; }).length;
+  var totalChaps = 0, doneChaps = 0;
+  modulesCache.forEach(function(m) {
+    totalChaps += (m.total_chapters || 0);
+    doneChaps  += (m.done_chapters  || 0);
+  });
+  var totalUnits = totalMods + totalChaps;
+  var doneUnits  = doneMods + doneChaps;
+  var pct = totalUnits ? Math.round(doneUnits / totalUnits * 100) : 0;
+  var certsEarned = bereichStatusCache.filter(function(b) { return b.final_passed; }).length;
+
+  document.getElementById('stat-pct').textContent = pct;
+  document.getElementById('stat-pct-bar').style.width = pct + '%';
+  document.getElementById('stat-mods-done').textContent = doneMods;
+  document.getElementById('stat-mods-total').textContent = ' / ' + totalMods;
+  document.getElementById('stat-chaps').textContent = doneChaps;
+  document.getElementById('stat-certs').textContent = certsEarned;
+}
+
+function renderNews(newsArr) {
+  var grid = document.getElementById('news-grid');
+  var count = document.getElementById('news-count');
+  grid.innerHTML = '';
+  if (!newsArr.length) {
+    count.textContent = '';
+    grid.innerHTML = '<div class="empty-state">Momentan keine Neuigkeiten.</div>';
+    return;
+  }
+  count.textContent = '(' + newsArr.length + ')';
+  newsArr.forEach(function(n) {
+    var isAllg = n.bereich === 'Allgemein';
+    var date = n.updated_at ? new Date(n.updated_at).toLocaleDateString('de-DE', { day:'2-digit', month:'2-digit', year:'numeric' }) : '';
+    var card = document.createElement('div');
+    card.className = 'news-card ' + (isAllg ? 'allgemein' : 'bereich');
+    card.innerHTML =
+      '<div class="news-head-row">' +
+        '<div class="news-bereich-tag">' + esc(n.bereich) + '</div>' +
+        (date ? '<div class="news-date">' + date + '</div>' : '') +
+      '</div>' +
+      '<div class="news-title">' + esc(n.title) + '</div>' +
+      '<div class="news-content">' + esc(n.content) + '</div>';
+    grid.appendChild(card);
+  });
+}
+
+// Grouped by Bereich
+function renderModuleGrid() {
+  var grid = document.getElementById('module-grid');
+  var countEl = document.getElementById('mod-count');
+  grid.innerHTML = '';
+  if (!modulesCache.length) {
+    countEl.textContent = '';
+    grid.innerHTML = '<div class="empty-state">Dir sind noch keine Module zugewiesen.</div>';
+    return;
+  }
+  countEl.textContent = '(' + modulesCache.length + ')';
+
+  var sorted = modulesCache.slice().sort(function(a, b) {
+    var aDone = a.passed ? 1 : 0;
+    var bDone = b.passed ? 1 : 0;
+    if (aDone !== bDone) return aDone - bDone;
+    return (a.order_index || 0) - (b.order_index || 0);
+  });
+
+  // group by bereich
+  var groups = {};
+  var groupOrder = [];
+  sorted.forEach(function(m) {
+    var b = (m.bereich || 'Sonstige').toString();
+    if (!groups[b]) { groups[b] = []; groupOrder.push(b); }
+    groups[b].push(m);
+  });
+
+  var groupIdx = 0;
+  groupOrder.forEach(function(bereich) {
+    var mods = groups[bereich];
+    var totalInB = mods.length;
+    var doneInB = mods.filter(function(m) { return m.passed; }).length;
+    var pct = totalInB ? Math.round(doneInB / totalInB * 100) : 0;
+    groupIdx++;
+
+    var groupWrap = document.createElement('div');
+    groupWrap.className = 'bereich-group';
+
+    var head = document.createElement('div');
+    head.className = 'bereich-head';
+    head.innerHTML =
+      '<div class="bereich-title-wrap">' +
+        '<div class="bereich-num">' + String(groupIdx).padStart(2, '0') + '</div>' +
+        '<div class="bereich-title">' + esc(bereich) + '</div>' +
+      '</div>' +
+      '<div class="bereich-meta">' +
+        '<span>' + doneInB + ' von ' + totalInB + ' Module</span>' +
+        '<span class="dot"></span>' +
+        '<span class="' + (pct === 100 ? 'ok' : '') + '">' + pct + '% abgeschlossen</span>' +
+      '</div>';
+    groupWrap.appendChild(head);
+
+    var inner = document.createElement('div');
+    inner.className = 'module-grid-inner';
+
+    mods.forEach(function(m) {
+      var passed = m.passed === true;
+      var locked = m.locked === true && !isAdminUser;
+      var card = document.createElement('div');
+      card.className = 'module-card' + (passed ? ' done' : '') + (locked ? ' locked' : '');
+
+      var badge = passed
+        ? '<div class="module-badge">✓ Abgeschlossen</div>'
+        : (locked ? '<div class="module-lock-badge">🔒 Gesperrt</div>' : '<div class="module-bereich" style="text-align:right;">' + esc(m.bereich) + '</div>');
+
+      var lockInf

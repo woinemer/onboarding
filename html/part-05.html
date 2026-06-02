@@ -1,0 +1,211 @@
+o = locked
+        ? '<div class="module-lock-info">🔒 Zuerst abschließen: <strong>' + esc(m.required_title) + '</strong></div>'
+        : '';
+      var pflichtTag = (!locked && ((m.pflicht||'').toString()==='TRUE'||m.pflicht===true))
+        ? '<div class="pflicht-tag">Pflicht</div>'
+        : '';
+      var total = m.total_chapters || 0;
+      var done  = m.done_chapters || 0;
+      var mpct = total ? Math.round(done / total * 100) : 0;
+      var progressHtml = !locked
+        ? '<div class="module-progress-wrap">' +
+            '<div class="module-progress-row">' +
+              '<span>' + done + ' / ' + total + ' Kapitel</span>' +
+              '<span class="pct">' + mpct + '%</span>' +
+            '</div>' +
+            '<div class="module-progress"><div class="module-progress-bar" style="width:' + mpct + '%"></div></div>' +
+          '</div>'
+        : '';
+      card.innerHTML =
+        '<div class="module-topline">' +
+          '<div class="module-bereich">' + esc(m.bereich) + '</div>' +
+          (passed ? '<div class="module-badge">✓ Bestanden</div>' : (locked ? '<div class="module-lock-badge">Gesperrt</div>' : '')) +
+        '</div>' +
+        '<div class="module-title">' + esc(m.title) + '</div>' +
+        '<div class="module-desc">' + esc(m.description) + '</div>' +
+        pflichtTag + lockInfo + progressHtml;
+      if (!locked) card.onclick = (function(mod) { return function() { openModule(mod); }; })(m);
+      inner.appendChild(card);
+    });
+
+    groupWrap.appendChild(inner);
+    grid.appendChild(groupWrap);
+  });
+}
+
+function renderBereichstestSection() {
+  var sec = document.getElementById('bereichstest-section');
+  sec.innerHTML = '';
+  if (!bereichStatusCache.length) return;
+
+  var label = document.createElement('div');
+  label.className = 'section-label';
+  label.innerHTML = 'Abschlusstests & Zertifikate <span class="count">(' + bereichStatusCache.length + ')</span>';
+  sec.appendChild(label);
+
+  bereichStatusCache.forEach(function(bs) {
+    var card = document.createElement('div');
+    var classes = ['bereichstest-card'];
+    if (bs.final_passed) classes.push('passed');
+    if (!bs.final_unlocked) classes.push('locked');
+    card.className = classes.join(' ');
+
+    var labelText = bs.final_passed ? '✓ Bestanden' : (bs.final_unlocked ? '○ Bereit' : '🔒 Gesperrt');
+    var titleText = bs.bereich;
+    var descText;
+    if (bs.final_passed) {
+      descText = 'Du hast den Abschlusstest erfolgreich bestanden. Lade dir jetzt dein offizielles Zertifikat herunter.';
+    } else if (bs.final_unlocked) {
+      descText = isAdminUser
+        ? 'Admin-Zugriff: Du kannst den Test jederzeit starten.'
+        : 'Du hast alle Module im Bereich abgeschlossen. Bestehe den finalen Test (mind. 80%) und sichere dir dein Zertifikat.';
+    } else {
+      descText = 'Schließe zuerst alle ' + bs.total_modules + ' Module ab. Aktuell abgeschlossen: ' + bs.passed_modules + ' / ' + bs.total_modules + '.';
+    }
+
+    var btnHtml;
+    if (bs.final_passed) {
+      btnHtml = '<button class="bt-action cert" onclick="downloadCertificate(\'' + escAttr(bs.bereich) + '\', this)">📜 Zertifikat herunterladen</button>';
+    } else if (bs.final_unlocked) {
+      btnHtml = '<button class="bt-action" onclick="startFinalQuiz(\'' + escAttr(bs.bereich) + '\', this)">Test starten →</button>';
+    } else {
+      btnHtml = '<button class="bt-action" disabled>Test starten →</button>';
+    }
+
+    card.innerHTML =
+      '<div class="bt-label">' + esc(labelText) + '</div>' +
+      '<div class="bt-title">Abschlusstest <em>' + esc(titleText) + '</em></div>' +
+      '<div class="bt-desc">' + esc(descText) + '</div>' +
+      btnHtml;
+    sec.appendChild(card);
+  });
+}
+
+function refreshCertificateButtons(options) {
+  options = options || {};
+  var wrap = document.getElementById('cert-buttons');
+  wrap.innerHTML = '';
+  api({ action: 'getCertificateInfo', token: session.token }, function(res) {
+    if (!res.ok) {
+      if (!options.silent) toast('Zertifikate konnten nicht geladen werden');
+      return;
+    }
+    certificateCache = res.certificates || [];
+    certificateCache.forEach(function(c) {
+      if (!c.available) return;
+      var b = document.createElement('button');
+      b.className = 'btn-cert' + (c.isAdmin && !c.passed ? ' admin-only' : '');
+      b.title = c.isAdmin && !c.passed ? 'Admin-Vorschau (nicht offiziell bestanden)' : '';
+      b.innerHTML = '📜 ' + esc(c.bereich);
+      b.onclick = (function(bereich, btn){ return function() { downloadCertificate(bereich, btn); }; })(c.bereich, b);
+      wrap.appendChild(b);
+    });
+    renderStats();
+  });
+}
+
+function downloadCertificate(bereich, btn) {
+  var restore = setButtonLoading(btn, '⏳ Generiere ...');
+  api({ action: 'generateCertificate', token: session.token, bereich: bereich }, function(res) {
+    restore();
+    if (res.ok) {
+      window.open(res.url, '_blank');
+    } else {
+      toast('Fehler: ' + (res.error || 'Unbekannt'));
+    }
+  });
+}
+
+// ================= MODUL-VIEW =================
+function openModule(m) {
+  if (m.locked && !isAdminUser) return;
+  currentModule = m;
+  hideAllScreens();
+  document.getElementById('module-screen').classList.add('active');
+  window.scrollTo(0, 0);
+  document.getElementById('mv-bereich').textContent = m.bereich;
+  document.getElementById('mv-title').textContent = m.title;
+  document.getElementById('mv-desc').textContent = m.description;
+  document.getElementById('chapter-list').innerHTML = '<div class="loading-center"><div class="spinner"></div></div>';
+  document.getElementById('chapter-content-wrap').innerHTML = '';
+  api({ action: 'getChapters', token: session.token, module_id: m.module_id }, function(res) {
+    if (!res.ok) return;
+    currentChapters = res.chapters || [];
+    currentQuiz = res.quiz || [];
+    renderChapterList();
+    var firstOpen = isAdminUser ? 0 : currentChapters.findIndex(function(c) { return !isChapterDone(c.chapter_id); });
+    if (firstOpen === -1) firstOpen = 0;
+    if (currentChapters.length) openChapter(currentChapters[firstOpen], firstOpen);
+  });
+}
+
+function showModuleView(m) { if (m) openModule(m); }
+
+function renderChapterList() {
+  var list = document.getElementById('chapter-list');
+  list.innerHTML = '';
+  currentChapters.forEach(function(c, i) {
+    var done = isChapterDone(c.chapter_id);
+    var unlocked = isChapterUnlocked(i);
+    var item = document.createElement('div');
+    item.className = 'chapter-item' + (done ? ' done-ch' : '') + (unlocked ? ' clickable' : ' locked-ch');
+    item.id = 'ch-item-' + c.chapter_id;
+    var iconClass = done ? 'ch-icon done-icon' : 'ch-icon';
+    var iconContent = done ? '✓' : (unlocked ? String(i+1).padStart(2,'0') : '🔒');
+    var subText = '';
+    if (!unlocked) subText = '<div class="ch-sub">Schließe das vorherige Kapitel ab</div>';
+    else if (c.video_url) subText = '<div class="ch-sub">Video · Kapitel</div>';
+    else if (c.image_url) subText = '<div class="ch-sub">Bild · Kapitel</div>';
+    else subText = '<div class="ch-sub">Lesen</div>';
+    item.innerHTML = '<div class="' + iconClass + '">' + iconContent + '</div>' +
+      '<div class="ch-body"><div class="ch-title">' + esc(c.title) + '</div>' + subText + '</div>';
+    if (unlocked) item.onclick = (function(ch, idx) { return function() { openChapter(ch, idx); }; })(c, i);
+    list.appendChild(item);
+  });
+  if (currentQuiz && currentQuiz.length > 0) {
+    var passed = isModulePassed(currentModule.module_id);
+    var quizUnlocked = allChaptersDone();
+    var qi = document.createElement('div');
+    qi.className = 'chapter-item' + (passed ? ' done-ch' : '') + (quizUnlocked ? ' clickable' : ' locked-ch');
+    qi.innerHTML = '<div class="ch-icon' + (passed ? ' done-icon' : '') + '">' +
+      (passed ? '✓' : (quizUnlocked ? '§' : '🔒')) + '</div>' +
+      '<div class="ch-body"><div class="ch-title">Abschlusstest Modul</div>' +
+      '<div class="ch-sub">' + (quizUnlocked
+        ? currentQuiz.length + ' Fragen · Mind. ' + (currentModule.quiz_min_score||70) + '%'
+        : 'Schließe erst alle Kapitel ab') + '</div></div>';
+    if (quizUnlocked) qi.onclick = function() { showModuleQuiz(); };
+    list.appendChild(qi);
+  }
+}
+
+function openChapter(c, idx) {
+  if (!isChapterUnlocked(idx)) return;
+  document.querySelectorAll('.chapter-item').forEach(function(el) { el.classList.remove('active-ch'); });
+  var item = document.getElementById('ch-item-' + c.chapter_id);
+  if (item) item.classList.add('active-ch');
+  var prev = idx > 0 ? currentChapters[idx-1] : null;
+  var next = idx < currentChapters.length-1 ? currentChapters[idx+1] : null;
+  var nextUnlocked = next && isChapterUnlocked(idx+1);
+  var done = isChapterDone(c.chapter_id);
+  document.getElementById('chapter-content-wrap').innerHTML =
+    '<div class="chapter-content">' + buildMediaHtml(c) + sanitizeChapterHtml(c.content_html || '') + '</div>' +
+    '<div class="chapter-nav">' +
+    (prev ? '<button class="btn-sec" onclick="openChapter(currentChapters['+(idx-1)+'],'+(idx-1)+')">← '+esc(prev.title)+'</button>' : '<div></div>') +
+    (done
+      ? '<button class="btn-sec" disabled style="color:var(--green);border-color:rgba(139,173,94,0.4);cursor:default;">✓ Abgeschlossen</button>'
+      : '<button class="btn-complete" onclick="markDone(\''+escAttr(c.chapter_id)+'\','+idx+', this)">Kapitel abschließen ✓</button>') +
+    (next
+      ? (nextUnlocked
+          ? '<button class="btn-sec" onclick="openChapter(currentChapters['+(idx+1)+'],'+(idx+1)+')">'+esc(next.title)+' →</button>'
+          : '<button class="btn-sec" disabled style="opacity:0.4;cursor:not-allowed;">'+esc(next.title)+' →</button>')
+      : '<div></div>') +
+    '</div>';
+}
+
+function sanitizeChapterHtml(html) {
+  var template = document.createElement('template');
+  template.innerHTML = html || '';
+  var allowed = {
+    A: true, B: true, BLOCKQUOTE: true, BR: true, CODE: true, DIV: true, EM: true,
+    H1: true, H2: true, H3: true, H4: true, HR: true, I: true, IMG: true, LI: true,
+    OL: true, P: true, 
