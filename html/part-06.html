@@ -1,10 +1,4 @@
-ue, rowspan: true }
-  };
-  function safeUrl(value) {
-    var v = (value || '').trim().toLowerCase();
-    return v.indexOf('http://') === 0 || v.indexOf('https://') === 0 || v.indexOf('mailto:') === 0 || v.indexOf('#') === 0;
-  }
-  function clean(node) {
+an(node) {
     Array.prototype.slice.call(node.childNodes).forEach(function(child) {
       if (child.nodeType === 8) {
         child.remove();
@@ -232,4 +226,9 @@ var lastNews = [];
 
 function showQuizResult(res, pct, isFinal) {
   document.querySelector('#quiz-wrap .btn-primary').style.display = 'none';
-  var result = document.createElement('div
+  var result = document.createElement('div');
+  result.className = 'quiz-result';
+  var againBtn = !res.passed
+    ? '<button class="btn-sec" style="margin-top:1rem;" onclick="' + (isFinal
+        ? "startFinalQuiz('"+escAttr(currentFinalQuiz.bereich)+"', this)"
+        : "showModuleQ

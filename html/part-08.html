@@ -1,11 +1,4 @@
- °C'], correct_index:0 }
-  ];
-  var mockFinalQuiz = [
-    { question:'Demo Abschlussfrage?', options:['A','B','C','D'], correct_index:1 }
-  ];
-  function mockGrade(questions, answers) {
-    var score = 0;
-    var results = questions.map(function(q, i) {
+on(q, i) {
       var selected = parseInt((answers || {})[i], 10);
       var correct = parseInt(q.correct_index, 10) || 0;
       var ok = selected === correct;

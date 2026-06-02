@@ -76,12 +76,14 @@
   }
   .nav-brand::before {
     content: '';
-    width: 22px; height: 22px;
+    width: 34px; height: 34px;
     background:
-      radial-gradient(circle at 50% 50%, var(--gold) 0%, var(--gold) 28%, transparent 30%),
-      conic-gradient(from 0deg, var(--gold-deep), var(--gold), var(--copper), var(--gold-deep));
+      url("assets/woinemer-logo.webp") center/cover no-repeat,
+      url("../assets/woinemer-logo.webp") center/cover no-repeat,
+      #050505;
     border-radius: 50%;
-    box-shadow: 0 0 0 1px rgba(201,169,106,0.3), inset 0 0 0 3px var(--ink);
+    border: 1px solid rgba(200,169,110,0.45);
+    box-shadow: 0 0 0 1px rgba(201,169,106,0.18);
   }
   .nav-brand small {
     display: block;
@@ -94,12 +96,7 @@
   }
   .nav-user { font-size: 0.78rem; color: var(--text-2); display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; }
   .nav-user span { color: var(--text); }
-  #nav-name { display: inline-flex; align-items: center; gap: 0.5rem; padding-left: 0.75rem; border-left: 1px solid var(--line); }
-  #nav-name::before {
-    content: ''; width: 26px; height: 26px; border-radius: 50%;
-    background: linear-gradient(135deg, var(--gold-deep), var(--copper));
-    border: 1px solid var(--gold-line);
-  }
+  #nav-name { display: inline-flex; align-items: center; padding-left: 0.75rem; border-left: 1px solid var(--line); }
   .btn-logout {
     background: none; border: 1px solid var(--line); color: var(--muted);
     padding: 6px 12px; border-radius: 3px; cursor: pointer; font-size: 0.72rem;

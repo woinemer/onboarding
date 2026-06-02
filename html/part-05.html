@@ -1,9 +1,4 @@
-      var done  = m.done_chapters || 0;
-      var mpct = total ? Math.round(done / total * 100) : 0;
-      var progressHtml = !locked
-        ? '<div class="module-progress-wrap">' +
-            '<div class="module-progress-row">' +
-              '<span>' + done + ' / ' + total + ' Kapitel</span>' +
+    '<span>' + done + ' / ' + total + ' Kapitel</span>' +
               '<span class="pct">' + mpct + '%</span>' +
             '</div>' +
             '<div class="module-progress"><div class="module-progress-bar" style="width:' + mpct + '%"></div></div>' +
@@ -208,4 +203,10 @@ function sanitizeChapterHtml(html) {
     A: { href: true, title: true, target: true },
     IMG: { src: true, alt: true, title: true, width: true, height: true },
     TD: { colspan: true, rowspan: true },
-    TH: { colspan: tr
+    TH: { colspan: true, rowspan: true }
+  };
+  function safeUrl(value) {
+    var v = (value || '').trim().toLowerCase();
+    return v.indexOf('http://') === 0 || v.indexOf('https://') === 0 || v.indexOf('mailto:') === 0 || v.indexOf('#') === 0;
+  }
+  function cle

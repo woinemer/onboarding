@@ -1,8 +1,4 @@
- not-allowed; background: var(--line); color: var(--muted); }
-  .bereichstest-card .bt-action.cert { background: var(--green); color: var(--ink); }
-  .bereichstest-card .bt-action.cert:hover { background: #9dbb6f; }
-
-  /* ========== BACK BUTTON ========== */
+N ========== */
   .back-btn {
     background: none; border: none; color: var(--gold);
     cursor: pointer; font-family: var(--mono); font-size: 0.72rem;
@@ -248,4 +244,8 @@
   /* ========== SPINNER ========== */
   .spinner {
     display: inline-block; width: 22px; height: 22px;
-    border: 2px solid var
+    border: 2px solid var(--line); border-top-color: var(--gold);
+    border-radius: 50%; animation: spin 0.7s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading-center { display: flex; justify-content: center; padding: 3rem; grid-

@@ -1,8 +1,4 @@
-(--line); border-top-color: var(--gold);
-    border-radius: 50%; animation: spin 0.7s linear infinite;
-  }
-  @keyframes spin { to { transform: rotate(360deg); } }
-  .loading-center { display: flex; justify-content: center; padding: 3rem; grid-column: 1 / -1; }
+column: 1 / -1; }
 
   /* ========== EMPTY STATE ========== */
   .empty-state {
@@ -268,4 +264,10 @@ function initialDataCacheKey() {
 }
 
 function readInitialDataCache() {
-  var key = initialDa
+  var key = initialDataCacheKey();
+  if (!key) return null;
+  try {
+    var cached = JSON.parse(localStorage.getItem(key) || 'null');
+    if (!cached || !cached.data || (Date.now() - cached.ts) > 10 * 60 * 1000) return null;
+    return cached.data;
+  } catch(e) {
