@@ -1,4 +1,8 @@
-(yt
+ap(function(v){ return v.trim(); }).filter(Boolean) : [];
+  videos.forEach(function(vUrl) {
+    var yt = vUrl.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]+)/);
+    html += '<div class="media-block">' +
+      (yt
         ? '<iframe class="chapter-video" src="https://www.youtube.com/embed/'+yt[1]+'" allowfullscreen></iframe>'
         : '<video class="chapter-video" controls><source src="'+esc(vUrl)+'"></video>') +
       '</div>';
@@ -227,8 +231,3 @@ function showHomeFromCache() {
 
 // ================= KONFETTI =================
 function showCongrats(bereich) {
-  document.getElementById('gz-bereich').textContent = bereich;
-  document.getElementById('gz-download').onclick = function() {
-    var btn = this;
-    var restore = setButtonLoading(btn, '⏳ Generiere ...');
-    api({ action

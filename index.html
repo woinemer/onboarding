@@ -12,7 +12,7 @@
   (async () => {
     try {
       const count = 10;
-      const version = 'auth-cert-settings-20260603c';
+      const version = 'mobile-drawer-mail-20260603b';
       const parts = await Promise.all(Array.from({ length: count }, (_, i) =>
         fetch('/onboarding/html/part-' + String(i).padStart(2, '0') + '.html?v=' + version, { cache: 'reload' }).then(r => {
           if (!r.ok) throw new Error('Frontend-Teil ' + i + ' konnte nicht geladen werden: ' + r.status);

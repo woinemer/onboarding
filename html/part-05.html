@@ -1,4 +1,8 @@
-
+action: 'requestPasswordReset', email: email }, function(res) {
+    restore();
+    err.textContent = res.message || res.error || 'Wenn die E-Mail bekannt ist, wurde ein Link gesendet.';
+    err.style.display = 'block';
+  });
 }
 
 function initAuthScreen() {
@@ -255,8 +259,4 @@ function renderBereichstestSection() {
     var labelText = bs.final_passed ? '✓ Bestanden' : (bs.final_unlocked ? '○ Bereit' : '🔒 Gesperrt');
     var titleText = bs.bereich;
     var descText;
-    if (bs.final_passed) {
-      descText = 'Du hast den Abschlusstest erfolgreich bestanden. Lade dir jetzt dein offizielles Zertifikat herunter.';
-    } else if (bs.final_unlocked) {
-      descText = isAdminUser
-        ? 'Admin-Z
+    if (

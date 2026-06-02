@@ -1,4 +1,4 @@
-hover { background: #d8b87a; box-shadow: 0 8px 20px -8px rgba(201,169,106,0.5); }
+n:hover { background: #d8b87a; box-shadow: 0 8px 20px -8px rgba(201,169,106,0.5); }
   .bereichstest-card .bt-action:disabled { opacity: 0.4; cursor: not-allowed; background: var(--line); color: var(--muted); }
   .bereichstest-card .bt-action.cert { background: var(--green); color: var(--ink); }
   .bereichstest-card .bt-action.cert:hover { background: #9dbb6f; }
@@ -32,6 +32,8 @@ hover { background: #d8b87a; box-shadow: 0 8px 20px -8px rgba(201,169,106,0.5); 
     top: 86px;
     max-height: calc(100vh - 110px);
     overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
     padding-right: 0.25rem;
   }
   .chapter-sidebar-title {
@@ -243,5 +245,4 @@ hover { background: #d8b87a; box-shadow: 0 8px 20px -8px rgba(201,169,106,0.5); 
   }
   .quiz-score em { font-style: italic; }
   .quiz-passed {
-    color: var(--green); font-size: 0.95rem; margin-top: 0.75rem;
-    font-family: var(--mono); letter-spacing
+    color: var(--green); font-size:

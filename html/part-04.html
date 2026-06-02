@@ -1,4 +1,8 @@
-e" id="mv-title"></div>
+ass="page-wrap">
+    <button class="back-btn" onclick="showHome()">Zurück zur Übersicht</button>
+    <div class="mv-header">
+      <div class="module-view-bereich-tag" id="mv-bereich"></div>
+      <div class="module-view-title" id="mv-title"></div>
       <div class="module-view-meta" id="mv-desc"></div>
     </div>
     <button class="btn-sec chapter-drawer-toggle" onclick="openChapterDrawer()">Kapitel öffnen</button>
@@ -186,7 +190,7 @@ function showSignupScreen(area, invite) {
   document.getElementById('main-nav').style.display = 'none';
   hideAllScreens();
   var label = area === 'kueche' ? 'Küche' : 'Service';
-  document.getElementById('signup-note').textContent = 'Zugang fuer den Bereich ' + label + ' einrichten.';
+  document.getElementById('signup-note').textContent = 'Zugang für den Bereich ' + label + ' einrichten.';
 }
 
 function doLogin() {
@@ -280,8 +284,4 @@ function requestPasswordResetUI(btn) {
     return;
   }
   var restore = setButtonLoading(btn, 'Sende Link ...');
-  api({ action: 'requestPasswordReset', email: email }, function(res) {
-    restore();
-    err.textContent = res.message || res.error || 'Wenn die E-Mail bekannt ist, wurde ein Link gesendet.';
-    err.style.display = 'block';
-  });
+  api({ 

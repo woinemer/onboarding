@@ -213,7 +213,7 @@
   }
   .signup-note {
     font-size: 0.84rem; line-height: 1.55; color: var(--text-2);
-    text-align: center; margin: -1rem 0 1.4rem;
+    text-align: center; margin: 0.35rem 0 1.8rem;
   }
   .login-foot {
     margin-top: 2rem; text-align: center;
@@ -560,6 +560,8 @@
     top: 86px;
     max-height: calc(100vh - 110px);
     overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
     padding-right: 0.25rem;
   }
   .chapter-sidebar-title {
@@ -897,6 +899,11 @@
     .chapter-sidebar {
       position: fixed; top: 0; bottom: 0; left: 0;
       width: min(86vw, 340px); max-height: none;
+      height: 100dvh;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      overscroll-behavior: contain;
+      touch-action: pan-y;
       background: var(--paper);
       border-right: 1px solid var(--line);
       z-index: 220; padding: 1.1rem;
@@ -1208,7 +1215,7 @@ function showSignupScreen(area, invite) {
   document.getElementById('main-nav').style.display = 'none';
   hideAllScreens();
   var label = area === 'kueche' ? 'Küche' : 'Service';
-  document.getElementById('signup-note').textContent = 'Zugang fuer den Bereich ' + label + ' einrichten.';
+  document.getElementById('signup-note').textContent = 'Zugang für den Bereich ' + label + ' einrichten.';
 }
 
 function doLogin() {
@@ -2233,8 +2240,8 @@ function toast(msg) {
       if (a === 'login') cb({ ok:true, token:'demo', user: mockUser });
       else if (a === 'validateSession') cb({ ok:true, user: mockUser });
       else if (a === 'logout') cb({ ok:true });
-      else if (a === 'requestPasswordReset') cb({ ok:true, message:'Demo: Reset-Link wuerde per Mail versendet.' });
-      else if (a === 'registerWithInvite') cb({ ok:true, message:'Demo: Bitte bestaetige deine E-Mail-Adresse.' });
+      else if (a === 'requestPasswordReset') cb({ ok:true, message:'Demo: Reset-Link würde per Mail versendet.' });
+      else if (a === 'registerWithInvite') cb({ ok:true, message:'Demo: Bitte bestätige deine E-Mail-Adresse.' });
       else if (a === 'getInitialData') cb({ ok:true, isAdmin:false, modules: mockModules, bereichStatus: mockBereichStatus, news: mockNews, progress:[
         {chapter_id:'c1', module_id:'m2', status:'completed'},
         {chapter_id:'c2', module_id:'m2', status:'completed'},
