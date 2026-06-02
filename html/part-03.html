@@ -1,15 +1,4 @@
-m: translateY(80px); opacity: 0;
-    transition: all 0.3s;
-    z-index: 999;
-    box-shadow: 0 20px 40px -10px rgba(0,0,0,0.5);
-    max-width: 360px;
-  }
-  .toast.show { transform: translateY(0); opacity: 1; }
-
-  /* ========== SPINNER ========== */
-  .spinner {
-    display: inline-block; width: 22px; height: 22px;
-    border: 2px solid var(--line); border-top-color: var(--gold);
+(--line); border-top-color: var(--gold);
     border-radius: 50%; animation: spin 0.7s linear infinite;
   }
   @keyframes spin { to { transform: rotate(360deg); } }
@@ -267,4 +256,16 @@ function setButtonLoading(btn, label) {
     btn.classList.remove('loading');
     if (label) {
       var labelEl = btn.querySelector('.btn-label');
-      
+      if (labelEl) labelEl.textContent = oldText.trim() || oldHtml;
+      else btn.innerHTML = oldHtml;
+    }
+  };
+}
+
+function initialDataCacheKey() {
+  if (!session || !session.user) return '';
+  return 'woinemer_academy_initial_' + (session.user.user_id || session.user.name || 'user');
+}
+
+function readInitialDataCache() {
+  var key = initialDa

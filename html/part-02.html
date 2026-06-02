@@ -1,9 +1,4 @@
-t-family: var(--sans); font-size: 0.82rem; font-weight: 600;
-    letter-spacing: 0.06em; text-transform: uppercase;
-    cursor: pointer; transition: all 0.2s;
-  }
-  .bereichstest-card .bt-action:hover { background: #d8b87a; box-shadow: 0 8px 20px -8px rgba(201,169,106,0.5); }
-  .bereichstest-card .bt-action:disabled { opacity: 0.4; cursor: not-allowed; background: var(--line); color: var(--muted); }
+ not-allowed; background: var(--line); color: var(--muted); }
   .bereichstest-card .bt-action.cert { background: var(--green); color: var(--ink); }
   .bereichstest-card .bt-action.cert:hover { background: #9dbb6f; }
 
@@ -242,4 +237,15 @@ t-family: var(--sans); font-size: 0.82rem; font-weight: 600;
     padding: 0.85rem 1.3rem;
     border-radius: 6px;
     font-size: 0.85rem;
-    transfor
+    transform: translateY(80px); opacity: 0;
+    transition: all 0.3s;
+    z-index: 999;
+    box-shadow: 0 20px 40px -10px rgba(0,0,0,0.5);
+    max-width: 360px;
+  }
+  .toast.show { transform: translateY(0); opacity: 1; }
+
+  /* ========== SPINNER ========== */
+  .spinner {
+    display: inline-block; width: 22px; height: 22px;
+    border: 2px solid var

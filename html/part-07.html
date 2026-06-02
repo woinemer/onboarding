@@ -1,15 +1,4 @@
-elected !== correct) {
-      var wrongEl = document.getElementById('opt_'+qi+'_'+selected);
-      if (wrongEl) wrongEl.classList.add('wrong');
-    }
-  });
-}
-
-var lastNews = [];
-
-function showQuizResult(res, pct, isFinal) {
-  document.querySelector('#quiz-wrap .btn-primary').style.display = 'none';
-  var result = document.createElement('div');
+');
   result.className = 'quiz-result';
   var againBtn = !res.passed
     ? '<button class="btn-sec" style="margin-top:1rem;" onclick="' + (isFinal
@@ -238,4 +227,8 @@ function toast(msg) {
   ];
   var mockNews = [
     { bereich:'Allgemein', title:'Neue Saisonkarte ab Mai', content:'Ab dem 1. Mai startet unsere Frühlingskarte mit Bärlauch, Spargel und ersten Kräutern aus dem eigenen Garten. Bitte schaut euch die neuen Gerichte in der Rezeptkartei an.', updated_at: new Date().toISOString() },
-    { bereich:'Küche', title:'Neuer Kühlschrank im Pass', content:'Im Pass steht ab Montag der neue Kühlschrank. Bitte beachtet die geänderte Temperaturzone für Fisch (1–2 °C).', updated_at: new Date(Date.now()-86400000*2).toISOStri
+    { bereich:'Küche', title:'Neuer Kühlschrank im Pass', content:'Im Pass steht ab Montag der neue Kühlschrank. Bitte beachtet die geänderte Temperaturzone für Fisch (1–2 °C).', updated_at: new Date(Date.now()-86400000*2).toISOString() },
+    { bereich:'Brauerei', title:'Sudwerk-Wartung KW 18', content:'Kurze Unterbrechung am Dienstag: Jens wartet das Sudwerk zwischen 9 und 11 Uhr.', updated_at: new Date(Date.now()-86400000*4).toISOString() }
+  ];
+  var mockModuleQuiz = [
+    { question:'Demo-Frage: Welche Temperatur ist korrekt?', options:['2 °C','7 °C','12 °C','20

@@ -1,11 +1,4 @@
-PRE: true, SPAN: true, STRONG: true, TABLE: true,
-    TBODY: true, TD: true, TH: true, THEAD: true, TR: true, U: true, UL: true
-  };
-  var attrAllow = {
-    A: { href: true, title: true, target: true },
-    IMG: { src: true, alt: true, title: true, width: true, height: true },
-    TD: { colspan: true, rowspan: true },
-    TH: { colspan: true, rowspan: true }
+ue, rowspan: true }
   };
   function safeUrl(value) {
     var v = (value || '').trim().toLowerCase();
@@ -228,4 +221,15 @@ function applyQuizFeedback(results) {
       var correctEl = document.getElementById('opt_'+qi+'_'+correct);
       if (correctEl) correctEl.classList.add('correct');
     }
-    if (selected !== null && !isNaN(selected) && s
+    if (selected !== null && !isNaN(selected) && selected !== correct) {
+      var wrongEl = document.getElementById('opt_'+qi+'_'+selected);
+      if (wrongEl) wrongEl.classList.add('wrong');
+    }
+  });
+}
+
+var lastNews = [];
+
+function showQuizResult(res, pct, isFinal) {
+  document.querySelector('#quiz-wrap .btn-primary').style.display = 'none';
+  var result = document.createElement('div

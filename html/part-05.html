@@ -1,10 +1,3 @@
-o = locked
-        ? '<div class="module-lock-info">🔒 Zuerst abschließen: <strong>' + esc(m.required_title) + '</strong></div>'
-        : '';
-      var pflichtTag = (!locked && ((m.pflicht||'').toString()==='TRUE'||m.pflicht===true))
-        ? '<div class="pflicht-tag">Pflicht</div>'
-        : '';
-      var total = m.total_chapters || 0;
       var done  = m.done_chapters || 0;
       var mpct = total ? Math.round(done / total * 100) : 0;
       var progressHtml = !locked
@@ -208,4 +201,11 @@ function sanitizeChapterHtml(html) {
   var allowed = {
     A: true, B: true, BLOCKQUOTE: true, BR: true, CODE: true, DIV: true, EM: true,
     H1: true, H2: true, H3: true, H4: true, HR: true, I: true, IMG: true, LI: true,
-    OL: true, P: true, 
+    OL: true, P: true, PRE: true, SPAN: true, STRONG: true, TABLE: true,
+    TBODY: true, TD: true, TH: true, THEAD: true, TR: true, U: true, UL: true
+  };
+  var attrAllow = {
+    A: { href: true, title: true, target: true },
+    IMG: { src: true, alt: true, title: true, width: true, height: true },
+    TD: { colspan: true, rowspan: true },
+    TH: { colspan: tr

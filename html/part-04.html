@@ -1,16 +1,4 @@
-if (labelEl) labelEl.textContent = oldText.trim() || oldHtml;
-      else btn.innerHTML = oldHtml;
-    }
-  };
-}
-
-function initialDataCacheKey() {
-  if (!session || !session.user) return '';
-  return 'woinemer_academy_initial_' + (session.user.user_id || session.user.name || 'user');
-}
-
-function readInitialDataCache() {
-  var key = initialDataCacheKey();
+taCacheKey();
   if (!key) return null;
   try {
     var cached = JSON.parse(localStorage.getItem(key) || 'null');
@@ -276,4 +264,10 @@ function renderModuleGrid() {
         ? '<div class="module-badge">✓ Abgeschlossen</div>'
         : (locked ? '<div class="module-lock-badge">🔒 Gesperrt</div>' : '<div class="module-bereich" style="text-align:right;">' + esc(m.bereich) + '</div>');
 
-      var lockInf
+      var lockInfo = locked
+        ? '<div class="module-lock-info">🔒 Zuerst abschließen: <strong>' + esc(m.required_title) + '</strong></div>'
+        : '';
+      var pflichtTag = (!locked && ((m.pflicht||'').toString()==='TRUE'||m.pflicht===true))
+        ? '<div class="pflicht-tag">Pflicht</div>'
+        : '';
+      var total = m.total_chapters || 0;

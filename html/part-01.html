@@ -1,15 +1,4 @@
-   padding: 1.1rem 1.4rem;
-    border-right: 1px solid var(--line-soft);
-    position: relative;
-  }
-  .stat:last-child { border-right: none; }
-  .stat-label {
-    font-family: var(--mono); font-size: 0.62rem;
-    color: var(--muted); letter-spacing: 0.16em;
-    text-transform: uppercase; margin-bottom: 0.5rem;
-  }
-  .stat-value {
-    font-family: var(--serif); font-size: 1.6rem;
+-family: var(--serif); font-size: 1.6rem;
     color: var(--text); line-height: 1;
     display: flex; align-items: baseline; gap: 0.3rem;
   }
@@ -261,4 +250,9 @@
   .bereichstest-card .bt-action {
     background: var(--gold); color: var(--ink);
     border: none; padding: 11px 26px; border-radius: 4px;
-    fon
+    font-family: var(--sans); font-size: 0.82rem; font-weight: 600;
+    letter-spacing: 0.06em; text-transform: uppercase;
+    cursor: pointer; transition: all 0.2s;
+  }
+  .bereichstest-card .bt-action:hover { background: #d8b87a; box-shadow: 0 8px 20px -8px rgba(201,169,106,0.5); }
+  .bereichstest-card .bt-action:disabled { opacity: 0.4; cursor:
