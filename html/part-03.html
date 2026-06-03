@@ -1,4 +1,9 @@
- 0.95rem; margin-top: 0.75rem;
+nt-size: 4rem; line-height: 1;
+    color: var(--gold); letter-spacing: -0.02em;
+  }
+  .quiz-score em { font-style: italic; }
+  .quiz-passed {
+    color: var(--green); font-size: 0.95rem; margin-top: 0.75rem;
     font-family: var(--mono); letter-spacing: 0.1em; text-transform: uppercase;
   }
   .quiz-failed {
@@ -122,9 +127,9 @@
   @media (max-width: 820px) {
     .module-layout { display: block; }
     .chapter-sidebar {
-      position: fixed; top: 0; bottom: 0; left: 0;
+      position: fixed; top: var(--mobile-nav-offset, 112px); bottom: 0; left: 0;
       width: min(86vw, 340px); max-height: none;
-      height: 100dvh;
+      height: calc(100dvh - var(--mobile-nav-offset, 112px));
       overflow-y: auto;
       -webkit-overflow-scrolling: touch;
       overscroll-behavior: contain;
@@ -138,7 +143,7 @@
     }
     body.chapter-drawer-open .chapter-sidebar { transform: translateX(0); }
     .chapter-drawer-backdrop {
-      position: fixed; inset: 0; background: rgba(0,0,0,0.55);
+      position: fixed; left: 0; right: 0; top: var(--mobile-nav-offset, 112px); bottom: 0; background: rgba(0,0,0,0.55);
       z-index: 210;
     }
     body.chapter-drawer-open .chapter-drawer-backdrop { display: block; }
@@ -196,6 +201,25 @@
   </div>
 </div>
 
+<div id="auth-action-screen" style="display:none;">
+  <div class="login-box">
+    <div class="login-crest"></div>
+    <div class="login-logo">Woinemer <em>Onboarding</em></div>
+    <div class="auth-message" id="auth-action-message">Einen Moment bitte ...</div>
+    <div id="reset-form" style="display:none;">
+      <label>Neues Passwort</label>
+      <input type="password" id="reset-pass" placeholder="Mindestens 8 Zeichen" autocomplete="new-password">
+      <button class="btn-primary" id="btn-reset" onclick="submitPasswordReset(this)">
+        <span class="btn-spinner"></span>
+        <span class="btn-label">Passwort speichern</span>
+      </button>
+    </div>
+    <button class="login-link" type="button" onclick="goToCleanLogin()">Zur Anmeldung</button>
+    <div class="login-error" id="auth-action-err"></div>
+    <div class="login-foot">Woinemer Hausbrauerei 2026</div>
+  </div>
+</div>
+
 <nav id="main-nav" style="display:none;">
   <div class="nav-brand">
     <div>
@@ -220,32 +244,4 @@
     <div class="stats-strip" id="stats-strip" style="display:none;">
       <div class="stat">
         <div class="stat-label">Fortschritt</div>
-        <div class="stat-value"><em id="stat-pct">0</em><span class="unit">%</span></div>
-        <div class="stat-bar"><div class="stat-bar-fill" id="stat-pct-bar" style="width:0%"></div></div>
-      </div>
-      <div class="stat">
-        <div class="stat-label">Module</div>
-        <div class="stat-value"><span id="stat-mods-done">0</span><span class="unit" id="stat-mods-total">/ 0</span></div>
-      </div>
-      <div class="stat">
-        <div class="stat-label">Kapitel</div>
-        <div class="stat-value"><span id="stat-chaps">0</span></div>
-      </div>
-      <div class="stat">
-        <div class="stat-label">Zertifikate</div>
-        <div class="stat-value"><em id="stat-certs">0</em></div>
-      </div>
-    </div>
-
-    <div class="section-label">Neuigkeiten <span class="count" id="news-count"></span></div>
-    <div class="news-grid" id="news-grid"><div class="loading-center"><div class="spinner"></div></div></div>
-
-    <div class="section-label">Deine Module <span class="count" id="mod-count"></span></div>
-    <div class="module-grid" id="module-grid"><div class="loading-center"><div class="spinner"></div></div></div>
-
-    <div id="bereichstest-section"></div>
-  </div>
-</div>
-
-<div id="module-screen" class="screen">
-  <div cl
+        <div class="stat-value"><em id="stat-pct">

@@ -51,7 +51,7 @@
     opacity: 0.7;
     mix-blend-mode: overlay;
   }
-  #login-screen, #signup-screen, nav, .screen, .toast, #confetti-overlay { position: relative; z-index: 1; }
+  #login-screen, #signup-screen, #auth-action-screen, nav, .screen, .toast, #confetti-overlay { position: relative; z-index: 1; }
 
   a { color: inherit; }
   button { font-family: inherit; }
@@ -122,7 +122,7 @@
   .screen.active { display: block; }
 
   /* ========== LOGIN ========== */
-  #login-screen, #signup-screen {
+  #login-screen, #signup-screen, #auth-action-screen {
     display: flex; align-items: center; justify-content: center;
     min-height: 100vh; padding: 2rem;
   }
@@ -214,6 +214,10 @@
   .signup-note {
     font-size: 0.84rem; line-height: 1.55; color: var(--text-2);
     text-align: center; margin: 0.35rem 0 1.8rem;
+  }
+  .auth-message {
+    font-size: 0.88rem; line-height: 1.6; color: var(--text-2);
+    text-align: center; margin: 0.5rem 0 1.5rem;
   }
   .login-foot {
     margin-top: 2rem; text-align: center;
@@ -897,9 +901,9 @@
   @media (max-width: 820px) {
     .module-layout { display: block; }
     .chapter-sidebar {
-      position: fixed; top: 0; bottom: 0; left: 0;
+      position: fixed; top: var(--mobile-nav-offset, 112px); bottom: 0; left: 0;
       width: min(86vw, 340px); max-height: none;
-      height: 100dvh;
+      height: calc(100dvh - var(--mobile-nav-offset, 112px));
       overflow-y: auto;
       -webkit-overflow-scrolling: touch;
       overscroll-behavior: contain;
@@ -913,7 +917,7 @@
     }
     body.chapter-drawer-open .chapter-sidebar { transform: translateX(0); }
     .chapter-drawer-backdrop {
-      position: fixed; inset: 0; background: rgba(0,0,0,0.55);
+      position: fixed; left: 0; right: 0; top: var(--mobile-nav-offset, 112px); bottom: 0; background: rgba(0,0,0,0.55);
       z-index: 210;
     }
     body.chapter-drawer-open .chapter-drawer-backdrop { display: block; }
@@ -967,6 +971,25 @@
     </button>
     <button class="login-link" type="button" onclick="showLoginScreen()">Zur Anmeldung</button>
     <div class="login-error" id="signup-err"></div>
+    <div class="login-foot">Woinemer Hausbrauerei 2026</div>
+  </div>
+</div>
+
+<div id="auth-action-screen" style="display:none;">
+  <div class="login-box">
+    <div class="login-crest"></div>
+    <div class="login-logo">Woinemer <em>Onboarding</em></div>
+    <div class="auth-message" id="auth-action-message">Einen Moment bitte ...</div>
+    <div id="reset-form" style="display:none;">
+      <label>Neues Passwort</label>
+      <input type="password" id="reset-pass" placeholder="Mindestens 8 Zeichen" autocomplete="new-password">
+      <button class="btn-primary" id="btn-reset" onclick="submitPasswordReset(this)">
+        <span class="btn-spinner"></span>
+        <span class="btn-label">Passwort speichern</span>
+      </button>
+    </div>
+    <button class="login-link" type="button" onclick="goToCleanLogin()">Zur Anmeldung</button>
+    <div class="login-error" id="auth-action-err"></div>
     <div class="login-foot">Woinemer Hausbrauerei 2026</div>
   </div>
 </div>
@@ -1104,6 +1127,7 @@ var isAdminUser = false;
 var certificateCache = [];
 var certificateSettings = { enabled: true, auto_generate: true, email_enabled: false };
 var signupContext = null;
+var resetToken = '';
 var SESSION_STORAGE_KEY = 'woinemer_onboarding_session_v1';
 
 function setButtonLoading(btn, label) {
@@ -1203,6 +1227,7 @@ function restoreSessionIfPossible() {
 
 function showLoginScreen() {
   document.getElementById('signup-screen').style.display = 'none';
+  document.getElementById('auth-action-screen').style.display = 'none';
   document.getElementById('login-screen').style.display = 'flex';
   document.getElementById('main-nav').style.display = 'none';
   hideAllScreens();
@@ -1211,6 +1236,7 @@ function showLoginScreen() {
 function showSignupScreen(area, invite) {
   signupContext = { area: area, invite: invite };
   document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('auth-action-screen').style.display = 'none';
   document.getElementById('signup-screen').style.display = 'flex';
   document.getElementById('main-nav').style.display = 'none';
   hideAllScreens();
@@ -1257,12 +1283,14 @@ function logout() {
   document.getElementById('main-nav').style.display = 'none';
   document.getElementById('login-screen').style.display = 'flex';
   document.getElementById('signup-screen').style.display = 'none';
+  document.getElementById('auth-action-screen').style.display = 'none';
   hideAllScreens();
 }
 
 function loadApp() {
   document.getElementById('login-screen').style.display = 'none';
   document.getElementById('signup-screen').style.display = 'none';
+  document.getElementById('auth-action-screen').style.display = 'none';
   document.getElementById('main-nav').style.display = 'flex';
   document.getElementById('nav-name').textContent = session.user.name;
   document.getElementById('welcome-name').textContent = session.user.name.split(' ')[0];
@@ -1316,8 +1344,80 @@ function requestPasswordResetUI(btn) {
   });
 }
 
+function showAuthActionScreen(message) {
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('signup-screen').style.display = 'none';
+  document.getElementById('auth-action-screen').style.display = 'flex';
+  document.getElementById('main-nav').style.display = 'none';
+  hideAllScreens();
+  document.getElementById('auth-action-message').textContent = message || 'Einen Moment bitte ...';
+  document.getElementById('auth-action-err').style.display = 'none';
+}
+
+function goToCleanLogin() {
+  try {
+    var cleanUrl = window.location.origin + window.location.pathname + (API ? '?api=' + encodeURIComponent(API) : '');
+    window.history.replaceState(null, '', cleanUrl);
+  } catch(e) {}
+  showLoginScreen();
+}
+
+function handleEmailVerification(token) {
+  showAuthActionScreen('E-Mail-Adresse wird bestätigt ...');
+  document.getElementById('reset-form').style.display = 'none';
+  api({ action: 'verifyEmail', token: token }, function(res) {
+    var msg = res.message || res.error || 'Bestätigung abgeschlossen.';
+    document.getElementById('auth-action-message').textContent = msg;
+    if (!res.ok) {
+      var err = document.getElementById('auth-action-err');
+      err.textContent = msg;
+      err.style.display = 'block';
+    }
+  });
+}
+
+function showPasswordReset(token) {
+  resetToken = token || '';
+  showAuthActionScreen('Lege jetzt dein neues Passwort fest.');
+  document.getElementById('reset-form').style.display = 'block';
+}
+
+function submitPasswordReset(btn) {
+  var pw = document.getElementById('reset-pass').value;
+  var err = document.getElementById('auth-action-err');
+  err.style.display = 'none';
+  if (!pw || pw.length < 8) {
+    err.textContent = 'Passwort muss mindestens 8 Zeichen haben.';
+    err.style.display = 'block';
+    return;
+  }
+  var restore = setButtonLoading(btn, 'Speichere ...');
+  api({ action: 'resetPassword', token: resetToken, password: pw }, function(res) {
+    restore();
+    document.getElementById('reset-pass').value = '';
+    document.getElementById('reset-form').style.display = res.ok ? 'none' : 'block';
+    document.getElementById('auth-action-message').textContent = res.message || res.error || 'Passwort wurde verarbeitet.';
+    if (!res.ok) {
+      err.textContent = res.error || 'Passwort konnte nicht gespeichert werden.';
+      err.style.display = 'block';
+    }
+  });
+}
+
 function initAuthScreen() {
   var params = new URLSearchParams(window.location.search);
+  var verifyToken = params.get('verify') || '';
+  var resetParam = params.get('reset') || '';
+  if (verifyToken) {
+    clearStoredSession();
+    handleEmailVerification(verifyToken);
+    return;
+  }
+  if (resetParam) {
+    clearStoredSession();
+    showPasswordReset(resetParam);
+    return;
+  }
   var signup = (params.get('signup') || '').toLowerCase();
   var invite = params.get('invite') || '';
   if ((signup === 'service' || signup === 'kueche') && invite) {
@@ -1662,6 +1762,11 @@ function openModule(m) {
 function showModuleView(m) { if (m) openModule(m); }
 
 function openChapterDrawer() {
+  var nav = document.getElementById('main-nav');
+  if (nav) {
+    var offset = Math.ceil(nav.getBoundingClientRect().bottom);
+    document.documentElement.style.setProperty('--mobile-nav-offset', Math.max(offset, 64) + 'px');
+  }
   document.body.classList.add('chapter-drawer-open');
 }
 
@@ -2242,6 +2347,8 @@ function toast(msg) {
       else if (a === 'logout') cb({ ok:true });
       else if (a === 'requestPasswordReset') cb({ ok:true, message:'Demo: Reset-Link würde per Mail versendet.' });
       else if (a === 'registerWithInvite') cb({ ok:true, message:'Demo: Bitte bestätige deine E-Mail-Adresse.' });
+      else if (a === 'verifyEmail') cb({ ok:true, message:'Demo: Deine E-Mail-Adresse wurde bestätigt. Du kannst dich jetzt anmelden.' });
+      else if (a === 'resetPassword') cb({ ok:true, message:'Demo: Dein Passwort wurde gespeichert. Du kannst dich jetzt anmelden.' });
       else if (a === 'getInitialData') cb({ ok:true, isAdmin:false, modules: mockModules, bereichStatus: mockBereichStatus, news: mockNews, progress:[
         {chapter_id:'c1', module_id:'m2', status:'completed'},
         {chapter_id:'c2', module_id:'m2', status:'completed'},

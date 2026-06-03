@@ -1,4 +1,32 @@
-ass="page-wrap">
+0</em><span class="unit">%</span></div>
+        <div class="stat-bar"><div class="stat-bar-fill" id="stat-pct-bar" style="width:0%"></div></div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">Module</div>
+        <div class="stat-value"><span id="stat-mods-done">0</span><span class="unit" id="stat-mods-total">/ 0</span></div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">Kapitel</div>
+        <div class="stat-value"><span id="stat-chaps">0</span></div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">Zertifikate</div>
+        <div class="stat-value"><em id="stat-certs">0</em></div>
+      </div>
+    </div>
+
+    <div class="section-label">Neuigkeiten <span class="count" id="news-count"></span></div>
+    <div class="news-grid" id="news-grid"><div class="loading-center"><div class="spinner"></div></div></div>
+
+    <div class="section-label">Deine Module <span class="count" id="mod-count"></span></div>
+    <div class="module-grid" id="module-grid"><div class="loading-center"><div class="spinner"></div></div></div>
+
+    <div id="bereichstest-section"></div>
+  </div>
+</div>
+
+<div id="module-screen" class="screen">
+  <div class="page-wrap">
     <button class="back-btn" onclick="showHome()">Zurück zur Übersicht</button>
     <div class="mv-header">
       <div class="module-view-bereich-tag" id="mv-bereich"></div>
@@ -79,6 +107,7 @@ var isAdminUser = false;
 var certificateCache = [];
 var certificateSettings = { enabled: true, auto_generate: true, email_enabled: false };
 var signupContext = null;
+var resetToken = '';
 var SESSION_STORAGE_KEY = 'woinemer_onboarding_session_v1';
 
 function setButtonLoading(btn, label) {
@@ -178,6 +207,7 @@ function restoreSessionIfPossible() {
 
 function showLoginScreen() {
   document.getElementById('signup-screen').style.display = 'none';
+  document.getElementById('auth-action-screen').style.display = 'none';
   document.getElementById('login-screen').style.display = 'flex';
   document.getElementById('main-nav').style.display = 'none';
   hideAllScreens();
@@ -186,6 +216,7 @@ function showLoginScreen() {
 function showSignupScreen(area, invite) {
   signupContext = { area: area, invite: invite };
   document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('auth-action-screen').style.display = 'none';
   document.getElementById('signup-screen').style.display = 'flex';
   document.getElementById('main-nav').style.display = 'none';
   hideAllScreens();
@@ -232,56 +263,14 @@ function logout() {
   document.getElementById('main-nav').style.display = 'none';
   document.getElementById('login-screen').style.display = 'flex';
   document.getElementById('signup-screen').style.display = 'none';
+  document.getElementById('auth-action-screen').style.display = 'none';
   hideAllScreens();
 }
 
 function loadApp() {
   document.getElementById('login-screen').style.display = 'none';
   document.getElementById('signup-screen').style.display = 'none';
+  document.getElementById('auth-action-screen').style.display = 'none';
   document.getElementById('main-nav').style.display = 'flex';
   document.getElementById('nav-name').textContent = session.user.name;
-  document.getElementById('welcome-name').textContent = session.user.name.split(' ')[0];
-  isAdminUser = (session.user.role || '') === 'admin';
-  showHome();
-}
-
-function submitSignup() {
-  var btn = document.getElementById('btn-signup');
-  if (btn.classList.contains('loading')) return;
-  var err = document.getElementById('signup-err');
-  err.style.display = 'none';
-  var payload = {
-    action: 'registerWithInvite',
-    signup: signupContext ? signupContext.area : '',
-    invite: signupContext ? signupContext.invite : '',
-    name: document.getElementById('signup-name').value.trim(),
-    email: document.getElementById('signup-email').value.trim(),
-    password: document.getElementById('signup-pass').value
-  };
-  if (!payload.name || !payload.email || !payload.password) {
-    err.textContent = 'Bitte alle Felder ausfüllen';
-    err.style.display = 'block';
-    return;
-  }
-  var restore = setButtonLoading(btn, 'Erstelle Zugang ...');
-  api(payload, function(res) {
-    restore();
-    err.textContent = res.message || res.error || '';
-    err.style.display = 'block';
-    if (res.ok) {
-      document.getElementById('signup-pass').value = '';
-    }
-  });
-}
-
-function requestPasswordResetUI(btn) {
-  var email = document.getElementById('login-user').value.trim();
-  var err = document.getElementById('login-err');
-  err.style.display = 'none';
-  if (!email) {
-    err.textContent = 'Bitte trage deine E-Mail-Adresse ein.';
-    err.style.display = 'block';
-    return;
-  }
-  var restore = setButtonLoading(btn, 'Sende Link ...');
-  api({ 
+  document.getElementById('welcome-n

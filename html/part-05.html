@@ -1,12 +1,128 @@
-action: 'requestPasswordReset', email: email }, function(res) {
+ame').textContent = session.user.name.split(' ')[0];
+  isAdminUser = (session.user.role || '') === 'admin';
+  showHome();
+}
+
+function submitSignup() {
+  var btn = document.getElementById('btn-signup');
+  if (btn.classList.contains('loading')) return;
+  var err = document.getElementById('signup-err');
+  err.style.display = 'none';
+  var payload = {
+    action: 'registerWithInvite',
+    signup: signupContext ? signupContext.area : '',
+    invite: signupContext ? signupContext.invite : '',
+    name: document.getElementById('signup-name').value.trim(),
+    email: document.getElementById('signup-email').value.trim(),
+    password: document.getElementById('signup-pass').value
+  };
+  if (!payload.name || !payload.email || !payload.password) {
+    err.textContent = 'Bitte alle Felder ausfüllen';
+    err.style.display = 'block';
+    return;
+  }
+  var restore = setButtonLoading(btn, 'Erstelle Zugang ...');
+  api(payload, function(res) {
+    restore();
+    err.textContent = res.message || res.error || '';
+    err.style.display = 'block';
+    if (res.ok) {
+      document.getElementById('signup-pass').value = '';
+    }
+  });
+}
+
+function requestPasswordResetUI(btn) {
+  var email = document.getElementById('login-user').value.trim();
+  var err = document.getElementById('login-err');
+  err.style.display = 'none';
+  if (!email) {
+    err.textContent = 'Bitte trage deine E-Mail-Adresse ein.';
+    err.style.display = 'block';
+    return;
+  }
+  var restore = setButtonLoading(btn, 'Sende Link ...');
+  api({ action: 'requestPasswordReset', email: email }, function(res) {
     restore();
     err.textContent = res.message || res.error || 'Wenn die E-Mail bekannt ist, wurde ein Link gesendet.';
     err.style.display = 'block';
   });
 }
 
+function showAuthActionScreen(message) {
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('signup-screen').style.display = 'none';
+  document.getElementById('auth-action-screen').style.display = 'flex';
+  document.getElementById('main-nav').style.display = 'none';
+  hideAllScreens();
+  document.getElementById('auth-action-message').textContent = message || 'Einen Moment bitte ...';
+  document.getElementById('auth-action-err').style.display = 'none';
+}
+
+function goToCleanLogin() {
+  try {
+    var cleanUrl = window.location.origin + window.location.pathname + (API ? '?api=' + encodeURIComponent(API) : '');
+    window.history.replaceState(null, '', cleanUrl);
+  } catch(e) {}
+  showLoginScreen();
+}
+
+function handleEmailVerification(token) {
+  showAuthActionScreen('E-Mail-Adresse wird bestätigt ...');
+  document.getElementById('reset-form').style.display = 'none';
+  api({ action: 'verifyEmail', token: token }, function(res) {
+    var msg = res.message || res.error || 'Bestätigung abgeschlossen.';
+    document.getElementById('auth-action-message').textContent = msg;
+    if (!res.ok) {
+      var err = document.getElementById('auth-action-err');
+      err.textContent = msg;
+      err.style.display = 'block';
+    }
+  });
+}
+
+function showPasswordReset(token) {
+  resetToken = token || '';
+  showAuthActionScreen('Lege jetzt dein neues Passwort fest.');
+  document.getElementById('reset-form').style.display = 'block';
+}
+
+function submitPasswordReset(btn) {
+  var pw = document.getElementById('reset-pass').value;
+  var err = document.getElementById('auth-action-err');
+  err.style.display = 'none';
+  if (!pw || pw.length < 8) {
+    err.textContent = 'Passwort muss mindestens 8 Zeichen haben.';
+    err.style.display = 'block';
+    return;
+  }
+  var restore = setButtonLoading(btn, 'Speichere ...');
+  api({ action: 'resetPassword', token: resetToken, password: pw }, function(res) {
+    restore();
+    document.getElementById('reset-pass').value = '';
+    document.getElementById('reset-form').style.display = res.ok ? 'none' : 'block';
+    document.getElementById('auth-action-message').textContent = res.message || res.error || 'Passwort wurde verarbeitet.';
+    if (!res.ok) {
+      err.textContent = res.error || 'Passwort konnte nicht gespeichert werden.';
+      err.style.display = 'block';
+    }
+  });
+}
+
 function initAuthScreen() {
   var params = new URLSearchParams(window.location.search);
+  var verifyToken = params.get('verify') || '';
+  var resetParam = params.get('reset') || '';
+  if (verifyToken) {
+    clearStoredSession();
+    handleEmailVerification(verifyToken);
+    return;
+  }
+  if (resetParam) {
+    clearStoredSession();
+    showPasswordReset(resetParam);
+    return;
+  }
   var signup = (params.get('signup') || '').toLowerCase();
   var invite = params.get('invite') || '';
   if ((signup === 'service' || signup === 'kueche') && invite) {
@@ -160,103 +276,4 @@ function renderModuleGrid() {
   var groups = {};
   var groupOrder = [];
   sorted.forEach(function(m) {
-    var b = (m.bereich || 'Sonstige').toString();
-    if (!groups[b]) { groups[b] = []; groupOrder.push(b); }
-    groups[b].push(m);
-  });
-
-  var groupIdx = 0;
-  groupOrder.forEach(function(bereich) {
-    var mods = groups[bereich];
-    var totalInB = mods.length;
-    var doneInB = mods.filter(function(m) { return m.passed; }).length;
-    var pct = totalInB ? Math.round(doneInB / totalInB * 100) : 0;
-    groupIdx++;
-
-    var groupWrap = document.createElement('div');
-    groupWrap.className = 'bereich-group';
-
-    var head = document.createElement('div');
-    head.className = 'bereich-head';
-    head.innerHTML =
-      '<div class="bereich-title-wrap">' +
-        '<div class="bereich-num">' + String(groupIdx).padStart(2, '0') + '</div>' +
-        '<div class="bereich-title">' + esc(bereich) + '</div>' +
-      '</div>' +
-      '<div class="bereich-meta">' +
-        '<span>' + doneInB + ' von ' + totalInB + ' Module</span>' +
-        '<span class="dot"></span>' +
-        '<span class="' + (pct === 100 ? 'ok' : '') + '">' + pct + '% abgeschlossen</span>' +
-      '</div>';
-    groupWrap.appendChild(head);
-
-    var inner = document.createElement('div');
-    inner.className = 'module-grid-inner';
-
-    mods.forEach(function(m) {
-      var passed = m.passed === true;
-      var locked = m.locked === true && !isAdminUser;
-      var card = document.createElement('div');
-      card.className = 'module-card' + (passed ? ' done' : '') + (locked ? ' locked' : '');
-
-      var badge = passed
-        ? '<div class="module-badge">✓ Abgeschlossen</div>'
-        : (locked ? '<div class="module-lock-badge">🔒 Gesperrt</div>' : '<div class="module-bereich" style="text-align:right;">' + esc(m.bereich) + '</div>');
-
-      var lockInfo = locked
-        ? '<div class="module-lock-info">🔒 Zuerst abschließen: <strong>' + esc(m.required_title) + '</strong></div>'
-        : '';
-      var pflichtTag = (!locked && ((m.pflicht||'').toString()==='TRUE'||m.pflicht===true))
-        ? '<div class="pflicht-tag">Pflicht</div>'
-        : '';
-      var total = m.total_chapters || 0;
-      var done  = m.done_chapters || 0;
-      var mpct = total ? Math.round(done / total * 100) : 0;
-      var progressHtml = !locked
-        ? '<div class="module-progress-wrap">' +
-            '<div class="module-progress-row">' +
-              '<span>' + done + ' / ' + total + ' Kapitel</span>' +
-              '<span class="pct">' + mpct + '%</span>' +
-            '</div>' +
-            '<div class="module-progress"><div class="module-progress-bar" style="width:' + mpct + '%"></div></div>' +
-          '</div>'
-        : '';
-      card.innerHTML =
-        '<div class="module-topline">' +
-          '<div class="module-bereich">' + esc(m.bereich) + '</div>' +
-          (passed ? '<div class="module-badge">✓ Bestanden</div>' : (locked ? '<div class="module-lock-badge">Gesperrt</div>' : '')) +
-        '</div>' +
-        '<div class="module-title">' + esc(m.title) + '</div>' +
-        '<div class="module-desc">' + esc(m.description) + '</div>' +
-        pflichtTag + lockInfo + progressHtml;
-      if (!locked) card.onclick = (function(mod) { return function() { openModule(mod); }; })(m);
-      inner.appendChild(card);
-    });
-
-    groupWrap.appendChild(inner);
-    grid.appendChild(groupWrap);
-  });
-}
-
-function renderBereichstestSection() {
-  var sec = document.getElementById('bereichstest-section');
-  sec.innerHTML = '';
-  if (certificateSettings && certificateSettings.enabled === false) return;
-  if (!bereichStatusCache.length) return;
-
-  var label = document.createElement('div');
-  label.className = 'section-label';
-  label.innerHTML = 'Abschlusstests & Zertifikate <span class="count">(' + bereichStatusCache.length + ')</span>';
-  sec.appendChild(label);
-
-  bereichStatusCache.forEach(function(bs) {
-    var card = document.createElement('div');
-    var classes = ['bereichstest-card'];
-    if (bs.final_passed) classes.push('passed');
-    if (!bs.final_unlocked) classes.push('locked');
-    card.className = classes.join(' ');
-
-    var labelText = bs.final_passed ? '✓ Bestanden' : (bs.final_unlocked ? '○ Bereit' : '🔒 Gesperrt');
-    var titleText = bs.bereich;
-    var descText;
-    if (
+    var b = (m.bereic

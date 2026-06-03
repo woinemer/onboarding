@@ -1,4 +1,120 @@
+nction(bs) {
+        if (bs.bereich === currentFinalQuiz.bereich) {
+          bs.final_passed = true;
+          bs.certificate_ready = true;
+        }
+      });
+    }
+    showQuizResult(res, res.score || 0, true);
+  });
+}
 
+// ================= QUIZ-UTILS =================
+function renderQuizQuestions(questions) {
+  var qWrap = document.getElementById('quiz-questions');
+  qWrap.innerHTML = '';
+  questions.forEach(function(q, qi) {
+    var div = document.createElement('div');
+    div.className = 'quiz-question';
+    var pEl = document.createElement('p');
+    pEl.setAttribute('data-qnum', 'Frage ' + String(qi+1).padStart(2, '0') + ' / ' + String(questions.length).padStart(2, '0'));
+    pEl.textContent = q.question;
+    div.appendChild(pEl);
+    (q.options||[]).forEach(function(opt, oi) {
+      var label = document.createElement('div');
+      label.className = 'quiz-option';
+      label.id = 'opt_'+qi+'_'+oi;
+      label.innerHTML = '<span>'+String.fromCharCode(65+oi)+'</span><span>'+esc(opt)+'</span>';
+      label.onclick = function() {
+        div.querySelectorAll('.quiz-option').forEach(function(o){ o.classList.remove('selected'); });
+        label.classList.add('selected');
+      };
+      div.appendChild(label);
+    });
+    qWrap.appendChild(div);
+  });
+}
+
+function collectAnswers(questions) {
+  var answers = {}, answered = true;
+  questions.forEach(function(q, qi) {
+    var sel = document.querySelector('#quiz-questions .quiz-question:nth-child('+(qi+1)+') .selected');
+    if (!sel) { answered = false; return; }
+    var optIdx = parseInt(sel.id.split('_')[2]);
+    answers[qi] = optIdx;
+  });
+  if (!answered) { toast('Bitte alle Fragen beantworten!'); return null; }
+  return { answers: answers };
+}
+
+function applyQuizFeedback(results) {
+  results.forEach(function(r) {
+    var qi = parseInt(r.index, 10);
+    var correct = parseInt(r.correct_index, 10);
+    var selected = r.selected_index === null || r.selected_index === undefined ? null : parseInt(r.selected_index, 10);
+    var qEl = document.querySelector('#quiz-questions .quiz-question:nth-child('+(qi+1)+')');
+    if (qEl) {
+      qEl.querySelectorAll('.quiz-option').forEach(function(o) { o.onclick = null; });
+    }
+    if (!isNaN(correct)) {
+      var correctEl = document.getElementById('opt_'+qi+'_'+correct);
+      if (correctEl) correctEl.classList.add('correct');
+    }
+    if (selected !== null && !isNaN(selected) && selected !== correct) {
+      var wrongEl = document.getElementById('opt_'+qi+'_'+selected);
+      if (wrongEl) wrongEl.classList.add('wrong');
+    }
+  });
+}
+
+var lastNews = [];
+
+function showQuizResult(res, pct, isFinal) {
+  document.querySelector('#quiz-wrap .btn-primary').style.display = 'none';
+  var result = document.createElement('div');
+  result.className = 'quiz-result';
+  var againBtn = !res.passed
+    ? '<button class="btn-sec" style="margin-top:1rem;" onclick="' + (isFinal
+        ? "startFinalQuiz('"+escAttr(currentFinalQuiz.bereich)+"', this)"
+        : "showModuleQuiz()") + '">Nochmal versuchen</button>'
+    : '';
+
+  var backTarget, backLabel;
+  if (isFinal) {
+    backTarget = 'showHome()';
+    backLabel  = 'Zur Übersicht';
+  } else if (res.passed) {
+    backTarget = 'showHomeFromCache()';
+    backLabel  = 'Zur Modulübersicht';
+  } else {
+    backTarget = 'showModuleView(currentModule)';
+    backLabel  = 'Zurück zum Modul';
+  }
+
+  var backBtn = '<button class="btn-sec" style="margin-top:1rem;margin-left:0.5rem;" onclick="' + backTarget + '">' + backLabel + '</button>';
+  result.innerHTML = '<div class="quiz-score"><em>'+pct+'</em>%</div>' +
+    '<div class="'+(res.passed?'quiz-passed':'quiz-failed')+'">' +
+    (res.passed ? '✓ Bestanden! Glückwunsch.' : '✗ Nicht bestanden · Mindestpunktzahl '+res.minScore+'%') + '</div>' +
+    '<div style="margin-top:1rem;">' + againBtn + backBtn + '</div>';
+  document.getElementById('quiz-wrap').appendChild(result);
+
+  if (isFinal && res.passed && (!certificateSettings || certificateSettings.enabled !== false)) {
+    setTimeout(function() { showCongrats(currentFinalQuiz.bereich); }, 800);
+  }
+}
+
+function showHomeFromCache() {
+  hideAllScreens();
+  document.getElementById('home-screen').classList.add('active');
+  window.scrollTo(0, 0);
+  renderStats();
+  renderNews(lastNews);
+  renderModuleGrid();
+  renderBereichstestSection();
+}
+
+// ================= KONFETTI =================
+function showCongrats(bereich) {
   document.getElementById('gz-bereich').textContent = bereich;
   document.getElementById('gz-download').onclick = function() {
     var btn = this;
@@ -171,52 +287,4 @@ function toast(msg) {
   var mockUser = { user_id: 'demo-user', name: 'Anna Schuster', role: 'employee' };
   if (window.location.search.indexOf('autologin=1') > -1) {
     try {
-      localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify({ ok:true, token:'demo', user: mockUser }));
-    } catch(e) {}
-  }
-  var mockModules = [
-    { module_id:'m1', title:'Hygiene & HACCP', description:'Die Grundlagen der Küchenhygiene, Kontrollpunkte und Reinigungsroutinen nach HACCP.', bereich:'Küche', order_index:1, pflicht:true, quiz_min_score:70, locked:false, total_chapters:6, done_chapters:6, passed:true },
-    { module_id:'m2', title:'Messerkunde & Schnitttechnik', description:'Vom Julienne bis Brunoise – sauber, sicher und effizient arbeiten am Board.', bereich:'Küche', order_index:2, pflicht:true, quiz_min_score:70, locked:false, total_chapters:5, done_chapters:3, passed:false },
-    { module_id:'m3', title:'Saisonale Küche', description:'Regionale Produkte erkennen, einsetzen und respektvoll verarbeiten.', bereich:'Küche', order_index:3, pflicht:false, quiz_min_score:70, locked:true, required_title:'Messerkunde & Schnitttechnik', total_chapters:4, done_chapters:0, passed:false },
-    { module_id:'m4', title:'Gästekommunikation', description:'Der Erstkontakt, die Beschwerde, der Abschied – souverän durch jeden Moment.', bereich:'Service', order_index:1, pflicht:true, quiz_min_score:70, locked:false, total_chapters:5, done_chapters:2, passed:false },
-    { module_id:'m5', title:'Wein & Speisenbegleitung', description:'Welches Glas, welcher Gang, welches Temperament – die Kunst der Paarung.', bereich:'Service', order_index:2, pflicht:false, quiz_min_score:70, locked:false, total_chapters:7, done_chapters:0, passed:false },
-    { module_id:'m6', title:'Maische & Gärung', description:'Vom Korn zur Würze – ein Blick in die Handwerkskammer der Brauerei.', bereich:'Brauerei', order_index:1, pflicht:true, quiz_min_score:70, locked:false, total_chapters:8, done_chapters:8, passed:true }
-  ];
-  var mockBereichStatus = [
-    { bereich:'Küche', total_modules:3, passed_modules:1, final_unlocked:false, final_passed:false },
-    { bereich:'Service', total_modules:2, passed_modules:0, final_unlocked:false, final_passed:false },
-    { bereich:'Brauerei', total_modules:1, passed_modules:1, final_unlocked:true, final_passed:false }
-  ];
-  var mockNews = [
-    { bereich:'Allgemein', title:'Neue Saisonkarte ab Mai', content:'Ab dem 1. Mai startet unsere Frühlingskarte mit Bärlauch, Spargel und ersten Kräutern aus dem eigenen Garten. Bitte schaut euch die neuen Gerichte in der Rezeptkartei an.', updated_at: new Date().toISOString() },
-    { bereich:'Küche', title:'Neuer Kühlschrank im Pass', content:'Im Pass steht ab Montag der neue Kühlschrank. Bitte beachtet die geänderte Temperaturzone für Fisch (1–2 °C).', updated_at: new Date(Date.now()-86400000*2).toISOString() },
-    { bereich:'Brauerei', title:'Sudwerk-Wartung KW 18', content:'Kurze Unterbrechung am Dienstag: Jens wartet das Sudwerk zwischen 9 und 11 Uhr.', updated_at: new Date(Date.now()-86400000*4).toISOString() }
-  ];
-  var mockModuleQuiz = [
-    { question:'Demo-Frage: Welche Temperatur ist korrekt?', options:['2 °C','7 °C','12 °C','20 °C'], correct_index:0 }
-  ];
-  var mockFinalQuiz = [
-    { question:'Demo Abschlussfrage?', options:['A','B','C','D'], correct_index:1 }
-  ];
-  function mockGrade(questions, answers) {
-    var score = 0;
-    var results = questions.map(function(q, i) {
-      var selected = parseInt((answers || {})[i], 10);
-      var correct = parseInt(q.correct_index, 10) || 0;
-      var ok = selected === correct;
-      if (ok) score++;
-      return { index:i, selected_index:isNaN(selected) ? null : selected, correct_index:correct, correct:ok };
-    });
-    return { pct: questions.length ? Math.round(score / questions.length * 100) : 0, results: results };
-  }
-
-  window.api = function(body, cb) {
-    setTimeout(function() {
-      var a = body.action;
-      if (a === 'login') cb({ ok:true, token:'demo', user: mockUser });
-      else if (a === 'validateSession') cb({ ok:true, user: mockUser });
-      else if (a === 'logout') cb({ ok:true });
-      else if (a === 'requestPasswordReset') cb({ ok:true, message:'Demo: Reset-Link würde per Mail versendet.' });
-      else if (a === 'registerWithInvite') cb({ ok:true, message:'Demo: Bitte bestätige deine E-Mail-Adresse.' });
-      else if (a === 'getInitialData') cb({ ok:true, isAdmin:false, modules: mockModules, bereichStatus: mockBereichStatus, news: mockNews, progress:[
-        {chapter_id:'c1', module_id:'
+  
