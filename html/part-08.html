@@ -1,4 +1,13 @@
-nction(bs) {
+
+  if (!data) return;
+  var restore = setButtonLoading(btn, 'Werte aus ...');
+  api({ action: 'submitFinalQuiz', token: session.token, bereich: currentFinalQuiz.bereich, answers: data.answers }, function(res) {
+    restore();
+    if (!res.ok) { toast('Fehler: ' + (res.error || 'Unbekannt')); return; }
+    applyQuizFeedback(res.results || []);
+    if (res.passed) {
+      userProgress.quizResults.push({ module_id: 'final_' + currentFinalQuiz.bereich, passed: 'TRUE' });
+      bereichStatusCache.forEach(function(bs) {
         if (bs.bereich === currentFinalQuiz.bereich) {
           bs.final_passed = true;
           bs.certificate_ready = true;
@@ -276,15 +285,4 @@ function toast(msg) {
 // When this file runs outside Apps Script, the template tag is not substituted, so API
 // stays literal and nothing loads. Auto-inject mock data so the design is
 // viewable in a plain browser. This has NO effect when served by Apps Script
-// because the template tag gets replaced with a real URL.
-(function() {
-  var demoRequested = window.location.search.indexOf('demo=1') > -1;
-  var localPreview = window.location.protocol === 'file:' ||
-    window.location.hostname === 'localhost' ||
-    window.location.hostname === '127.0.0.1';
-  if (!demoRequested && (!localPreview || API)) return;
-  // Mock mode
-  var mockUser = { user_id: 'demo-user', name: 'Anna Schuster', role: 'employee' };
-  if (window.location.search.indexOf('autologin=1') > -1) {
-    try {
-  
+// because the te

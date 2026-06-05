@@ -1811,7 +1811,18 @@ function renderChapterList() {
   }
 }
 
-function openChapter(c, idx) {
+function scrollToChapterStart() {
+  var wrap = document.getElementById('chapter-content-wrap');
+  if (!wrap) return;
+  var nav = document.getElementById('main-nav');
+  var navOffset = nav ? Math.ceil(nav.getBoundingClientRect().bottom) : 0;
+  var top = window.pageYOffset + wrap.getBoundingClientRect().top - navOffset - 12;
+  window.requestAnimationFrame(function() {
+    window.scrollTo({ top: Math.max(0, top), behavior: 'smooth' });
+  });
+}
+
+function openChapter(c, idx, keepScroll) {
   if (!isChapterUnlocked(idx)) return;
   closeChapterDrawer();
   document.querySelectorAll('.chapter-item').forEach(function(el) { el.classList.remove('active-ch'); });
@@ -1834,6 +1845,7 @@ function openChapter(c, idx) {
           : '<button class="btn-sec" disabled style="opacity:0.4;cursor:not-allowed;">'+esc(next.title)+' →</button>')
       : '<div></div>') +
     '</div>';
+  if (!keepScroll) scrollToChapterStart();
 }
 
 function sanitizeChapterHtml(html) {
@@ -1918,7 +1930,7 @@ function markDone(chapterId, idx, btn) {
     if (res.ok) {
       userProgress.progress.push({ chapter_id: chapterId, module_id: currentModule.module_id, status: 'completed' });
       renderChapterList();
-      openChapter(currentChapters[idx], idx);
+      openChapter(currentChapters[idx], idx, true);
       toast('Kapitel abgeschlossen ✓');
       if (idx+1 < currentChapters.length) {
         setTimeout(function() { openChapter(currentChapters[idx+1], idx+1); }, 600);

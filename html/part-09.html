@@ -1,4 +1,15 @@
-    localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify({ ok:true, token:'demo', user: mockUser }));
+mplate tag gets replaced with a real URL.
+(function() {
+  var demoRequested = window.location.search.indexOf('demo=1') > -1;
+  var localPreview = window.location.protocol === 'file:' ||
+    window.location.hostname === 'localhost' ||
+    window.location.hostname === '127.0.0.1';
+  if (!demoRequested && (!localPreview || API)) return;
+  // Mock mode
+  var mockUser = { user_id: 'demo-user', name: 'Anna Schuster', role: 'employee' };
+  if (window.location.search.indexOf('autologin=1') > -1) {
+    try {
+      localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify({ ok:true, token:'demo', user: mockUser }));
     } catch(e) {}
   }
   var mockModules = [
